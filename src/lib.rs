@@ -47,7 +47,7 @@ use std::io::Read;
 use html5ever::{
     parse_document,
     rcdom::{
-        RcDom, Handle,
+        self, RcDom, Handle,
     },
     tendril::TendrilSink,
 };
@@ -95,35 +95,51 @@ impl Soup {
     }
 }
 
-impl find::Find for Soup {
-    type QueryExecutor = SingleResultQueryExecutor;
+impl<'node> find::Find<'node> for Soup {
+    type QueryExecutor = SingleResultQueryExecutor<'node>;
 
-    fn find(&self) -> Self::QueryExecutor {
+    fn find(&'node self) -> Self::QueryExecutor {
         self.handle.find()
     }
 }
 
-impl find::FindAll for Soup {
-    type QueryExecutor = MultipleResultQueryExecutor;
+impl<'node> find::FindAll<'node> for Soup {
+    type QueryExecutor = MultipleResultQueryExecutor<'node>;
 
-    fn find_all(&self) -> Self::QueryExecutor {
+    fn find_all(&'node self) -> Self::QueryExecutor {
         self.handle.find_all()
     }
 }
 
-impl find::Find for Handle {
-    type QueryExecutor = SingleResultQueryExecutor;
+impl<'node> find::Find<'node> for Handle {
+    type QueryExecutor = SingleResultQueryExecutor<'node>;
 
-    fn find(&self) -> Self::QueryExecutor {
-        SingleResultQueryExecutor::new(self.clone())
+    fn find(&'node self) -> Self::QueryExecutor {
+        SingleResultQueryExecutor::new(&*self)
     }
 }
 
-impl find::FindAll for Handle {
-    type QueryExecutor = MultipleResultQueryExecutor;
+impl<'node> find::FindAll<'node> for Handle {
+    type QueryExecutor = MultipleResultQueryExecutor<'node>;
 
-    fn find_all(&self) -> Self::QueryExecutor {
-        MultipleResultQueryExecutor::new(self.clone())
+    fn find_all(&'node self) -> Self::QueryExecutor {
+        MultipleResultQueryExecutor::new(&*self)
+    }
+}
+
+impl<'node> find::Find<'node> for &'node rcdom::Node {
+    type QueryExecutor = SingleResultQueryExecutor<'node>;
+
+    fn find(&'node self) -> Self::QueryExecutor {
+        SingleResultQueryExecutor::new(self)
+    }
+}
+
+impl<'node> find::FindAll<'node> for &'node rcdom::Node {
+    type QueryExecutor = MultipleResultQueryExecutor<'node>;
+
+    fn find_all(&'node self) -> Self::QueryExecutor {
+        MultipleResultQueryExecutor::new(self)
     }
 }
 
