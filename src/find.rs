@@ -68,7 +68,9 @@ impl<'node> QueryExecutor<'node> for SingleResultQueryExecutor<'node> {
     type Output = Option<&'node rcdom::Node>;
 
     fn execute(&mut self) -> Fallible<Self::Output> {
-        Ok(match execute_query(self.0.handle, &self.0.queries, &mut self.0.depth_limit)? {
+        let mut results = vec![];
+        execute_query(self.0.handle, &self.0.queries, &mut self.0.depth_limit, &mut results)?;
+        Ok(match results {
             ref nodes if nodes.is_empty() => None,
             ref mut nodes => Some(&nodes.remove(0))
         })
@@ -111,7 +113,9 @@ impl<'node> QueryExecutor<'node> for MultipleResultQueryExecutor<'node> {
     type Output = Vec<&'node rcdom::Node>;
 
     fn execute(&mut self) -> Fallible<Self::Output> { // TODO: should I impl Find & FindAll for html5ever::Node or should these be wrapped?
-        Ok(execute_query(self.0.handle, &self.0.queries, &mut self.0.depth_limit)?)
+        let mut results = vec![];
+        execute_query(self.0.handle, &self.0.queries, &mut self.0.depth_limit, &mut results)?;
+        Ok(results)
     }
 }
 
@@ -158,24 +162,30 @@ impl<'node> QueryBuilder<'node> {
     }
 }
 
-fn execute_query<'node>(node: &'node rcdom::Node, queries: &[QueryType], remaining_depth: &mut Option<usize>) -> Fallible<Vec<&'node rcdom::Node>> {
-    let mut has_children = false;
-    let mut found_nodes = vec![];
+fn execute_query<'node>(node: &'node rcdom::Node, queries: &[QueryType], remaining_depth: &mut Option<usize>, found_nodes: &mut Vec<&'node rcdom::Node>) -> Fallible<()> {
+    let has_children = {
+        !node.children.borrow().is_empty()
+    };
+    if queries.iter().all(|query| query.matches(&node)) {
+        found_nodes.push(node);
+    }
     if let Some(ref d) = remaining_depth {
-        if *d == 0 {
-            Ok(found_nodes)
+        if *d == 0 || !has_children {
+            Ok(())
         } else {
-            let next_level = execute_query(node, queries, &mut remaining_depth.map(|d| d - 1))?;
-            found_nodes.extend(next_level);
-            Ok(found_nodes)
+            for child in node.children.borrow().iter() {
+                execute_query(child, queries, &mut remaining_depth.map(|d| d - 1), found_nodes)?;
+            }
+            Ok(())
         }
     } else {
         if has_children {
-            let next_level = execute_query(node, queries, remaining_depth)?;
-            found_nodes.extend(next_level);
-            Ok(found_nodes)
+            for child in node.children.borrow().iter() {
+                execute_query(child, queries, remaining_depth, found_nodes)?;
+            }
+            Ok(())
         } else {
-            Ok(found_nodes)
+            Ok(())
         }
     }
 }
