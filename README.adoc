@@ -1,0 +1,37 @@
+= Soup
+
+Inspired by the python library BeautifulSoup, this is a layer on top of html5ever that adds a different API for querying & manipulating HTML
+
+== Installation
+
+In order to use, add the following to your `Cargo.toml`:
+
+----
+[dependencies]
+soup = "0.1"
+----
+
+== Usage
+
+`soup` requires Rust 2018, so make sure you have `edition = 2018` in your `Cargo.toml`. Then, you just have to `use` it:
+
+----
+// src/main.rs
+
+use reqwest;
+use soup::prelude::*;
+
+fn main() {
+    let html = reqwest::get("https://google.com").unwrap();
+    let soup = Soup::new(html);
+    let some_text = soup.find()
+    			.tag("p")
+			.attr("class", "hidden")
+			.execute()
+			.unwrap()
+			.text()
+			.unwrap();
+}
+
+----
+

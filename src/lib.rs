@@ -53,6 +53,9 @@
 //! #   Ok(())
 //! # }
 //! ```
+extern crate failure;
+extern crate html5ever;
+
 use std::io::Read;
 use html5ever::{
     parse_document,
