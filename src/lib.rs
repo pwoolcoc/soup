@@ -1,4 +1,5 @@
-//! HTML Soup
+//! Inspired by the Python library "BeautifulSoup," `soup` is a layer on top of `html5ever` that
+//! aims to provide a slightly different API for querying & manipulating HTML
 //!
 //! # Examples
 //!
@@ -56,6 +57,7 @@ use crate::{
     },
 };
 
+/// This module imports all the important types & traits to use `soup` effectively
 pub mod prelude {
     pub use crate::find::{Find, FindAll};
     pub use crate::Soup;
@@ -65,12 +67,40 @@ pub mod prelude {
 mod find;
 mod node_ext;
 
+/// Parses HTML & provides methods to query & manipulate the document
 #[derive(Clone)]
 pub struct Soup {
     handle: Handle,
 }
 
 impl Soup {
+    /// Create a new `Soup` instance from a string slice
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// # use soup::prelude::*;
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let html = r#"
+    /// <!doctype html>
+    /// <html>
+    ///   <head>
+    ///     <title>page title</title>
+    ///   </head>
+    ///   <body>
+    ///     <h1>Heading</h1>
+    ///     <p>Some text</p>
+    ///     <p>Some more text</p>
+    ///   </body>
+    /// </html>
+    /// "#;
+    ///
+    /// let soup = Soup::new(html);
+    /// #   Ok(())
+    /// # }
+    /// ```
     pub fn new(html: &str) -> Soup {
         let dom = parse_document(RcDom::default(), Default::default())
             .from_utf8()
@@ -80,6 +110,22 @@ impl Soup {
         }
     }
 
+    /// Create a new `Soup` instance from something that implements `Read`
+    ///
+    /// This is good for parsing the output of an HTTP response, for example.
+    ///
+    /// ```rust,no_run
+    /// # extern crate reqwest;
+    /// # extern crate soup;
+    /// # use std::error::Error;
+    /// use soup::prelude::*;
+    ///
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let response = reqwest::get("https://docs.rs/soup")?;
+    /// let soup = Soup::from_reader(response)?;
+    /// #   Ok(())
+    /// # }
+    /// ```
     pub fn from_reader<R: Read>(mut reader: R) -> Fallible<Soup> {
         let dom = parse_document(RcDom::default(), Default::default())
                 .from_utf8()
@@ -87,16 +133,6 @@ impl Soup {
         Ok(Soup {
             handle: dom.document,
         })
-    }
-
-    pub fn find(&self) -> SingleResultQueryExecutor {
-        // forward this call to the Find impl
-        crate::find::Find::find(self)
-    }
-
-    pub fn find_all(&self) -> MultipleResultQueryExecutor {
-        // forward this call to the FindAll impl
-        crate::find::FindAll::find_all(self)
     }
 }
 

@@ -16,12 +16,14 @@ soup = "0.1"
 ----
 // src/main.rs
 
+use std::error::Error;
+
 use reqwest;
 use soup::prelude::*;
 
-fn main() {
-    let html = reqwest::get("https://google.com").unwrap();
-    let soup = Soup::new(html);
+fn main() -> Result<(), Box<Error>> {
+    let response = reqwest::get("https://google.com")?;
+    let soup = Soup::from_reader(response);
     let some_text = soup.find()
     			.tag("p")
 			.attr("class", "hidden")
