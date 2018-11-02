@@ -2,12 +2,69 @@ use std::fmt;
 use html5ever::rcdom::{self, Handle, NodeData};
 use failure::Fallible;
 
+/// Builds a query that returns the first element that matches
+///
+/// # Example
+///
+/// ```
+/// # extern crate soup;
+/// # use std::error::Error;
+/// # use soup::prelude::*;
+/// # fn main() -> Result<(), Box<Error>> {
+/// let html = r#"
+/// <!doctype html>
+/// <html>
+///   <body>
+///     <p>First paragraph</p>
+///     <p>Second paragraph</p>
+///   </body>
+/// </html>
+/// "#;
+/// let soup = Soup::new(html);
+/// assert_eq!(
+///     soup.find().tag("p").execute()?.and_then(|p| p.text()),
+///     Some("First paragraph".to_string())
+/// );
+/// #   Ok(())
+/// # }
+/// ```
 pub trait Find {
     type QueryExecutor: QueryExecutor;
 
     fn find(&self) -> Self::QueryExecutor;
 }
 
+/// Builds a query that returns all matching elements
+///
+/// # Example
+///
+/// ```
+/// # extern crate soup;
+/// # use std::error::Error;
+/// # use soup::prelude::*;
+/// # fn main() -> Result<(), Box<Error>> {
+/// let html = r#"
+/// <!doctype html>
+/// <html>
+///   <body>
+///     <p>First paragraph</p>
+///     <p>Second paragraph</p>
+///   </body>
+/// </html>
+/// "#;
+/// let soup = Soup::new(html);
+/// assert_eq!(
+///     soup.find_all()
+///         .tag("p")
+///         .execute()?
+///         .iter()
+///         .map(|p| p.text())
+///         .collect::<Vec<_>>(),
+///     vec![Some("First paragraph".to_string()), Some("Second paragraph".to_string())]
+/// );
+/// #   Ok(())
+/// # }
+/// ```
 pub trait FindAll {
     type QueryExecutor: QueryExecutor;
 

@@ -1,9 +1,11 @@
 use html5ever::rcdom::{self, Handle, NodeData};
 use failure::Fallible;
 
+/// Adds some convenience methods to the `html5ever::rcdom::Node` type
 pub trait NodeExt {
     fn get_node(&self) -> &rcdom::Node;
 
+    /// Retrieves the text value of this element, as well as it's child elements
     fn text(&self) -> Option<String> {
         let node = self.get_node();
         let mut result = vec![];

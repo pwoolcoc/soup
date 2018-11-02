@@ -7,9 +7,7 @@
 //! # extern crate soup;
 //! # use std::error::Error;
 //! # use soup::prelude::*;
-//!
 //! # fn main() -> Result<(), Box<Error>> {
-//!
 //! let html = r#"
 //! <!DOCTYPE html>
 //! <html>
@@ -34,6 +32,15 @@
 //!     Some("Some text".to_string())
 //! );
 //!
+//! assert_eq!(
+//!     soup.find_all()
+//!         .tag("p")
+//!         .execute()?
+//!         .iter()
+//!         .map(|p| p.text())
+//!         .collect::<Vec<_>>(),
+//!     vec![Some("Some text".to_string()), Some("Some more text".to_string())]
+//! );
 //! #   Ok(())
 //! # }
 //! ```
@@ -57,12 +64,15 @@ use crate::{
     },
 };
 
-/// This module imports all the important types & traits to use `soup` effectively
+/// This module exports all the important types & traits to use `soup` effectively
 pub mod prelude {
     pub use crate::find::{Find, FindAll};
     pub use crate::Soup;
     pub use crate::node_ext::NodeExt;
 }
+
+pub use crate::find::{Find, FindAll};
+pub use crate::node_ext::NodeExt;
 
 mod find;
 mod node_ext;
@@ -139,6 +149,28 @@ impl Soup {
 impl find::Find for Soup {
     type QueryExecutor = SingleResultQueryExecutor;
 
+    /// Implementation of `soup.find()`
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// # use std::error::Error;
+    /// # use soup::prelude::*;
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let html = "<!doctype html><html><head><title>foo</title></head><body></body></html>";
+    /// let soup = Soup::new(html);
+    /// assert_eq!(
+    ///     soup.find()
+    ///         .tag("title")
+    ///         .execute()?
+    ///         .and_then(|title| {
+    ///             title.text()
+    ///         }),
+    ///     Some("foo".to_string()));
+    /// #   Ok(())
+    /// # }
+    /// ```
     fn find(&self) -> Self::QueryExecutor {
         self.handle.find()
     }
@@ -147,6 +179,28 @@ impl find::Find for Soup {
 impl find::FindAll for Soup {
     type QueryExecutor = MultipleResultQueryExecutor;
 
+    /// Implementation of `soup.find_all()`
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// # use std::error::Error;
+    /// # use soup::prelude::*;
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let html = "<!doctype html><html><head><title>foo</title></head><body><p>one</p><p>two</p></body></html>";
+    /// let soup = Soup::new(html);
+    /// assert_eq!(
+    ///     soup.find_all()
+    ///         .tag("p")
+    ///         .execute()?
+    ///         .iter()
+    ///         .map(|p| p.text())
+    ///         .collect::<Vec<_>>(),
+    ///     vec![Some("one".to_string()), Some("two".to_string())]);
+    /// #   Ok(())
+    /// # }
+    /// ```
     fn find_all(&self) -> Self::QueryExecutor {
         self.handle.find_all()
     }
@@ -171,7 +225,6 @@ impl find::FindAll for Handle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::prelude::*;
 
     const TEST_HTML_STRING: &'static str = r#"
 <!doctype html>
