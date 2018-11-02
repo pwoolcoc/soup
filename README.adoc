@@ -1,6 +1,7 @@
 = Soup
 
-Inspired by the python library BeautifulSoup, this is a layer on top of html5ever that adds a different API for querying & manipulating HTML
+Inspired by the python library https://www.crummy.com/software/BeautifulSoup/bs4/doc/[BeautifulSoup], this is a layer on top of https://github.com/servo/html5ever[html5ever]
+that adds a different API for querying & manipulating HTML
 
 == Installation
 
@@ -15,6 +16,8 @@ soup = "0.1"
 
 ----
 // src/main.rs
+extern crate reqwest;
+extern crate soup;
 
 use std::error::Error;
 
@@ -27,10 +30,8 @@ fn main() -> Result<(), Box<Error>> {
     let some_text = soup.find()
     			.tag("p")
 			.attr("class", "hidden")
-			.execute()
-			.unwrap()
-			.text()
-			.unwrap();
+			.execute()?
+			.and_then(|p| p.text());
 }
 
 ----
