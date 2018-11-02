@@ -13,8 +13,6 @@ soup = "0.1"
 
 == Usage
 
-`soup` requires Rust 2018, so make sure you have `edition = 2018` in your `Cargo.toml`. Then, you just have to `use` it:
-
 ----
 // src/main.rs
 
