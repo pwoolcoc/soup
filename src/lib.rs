@@ -5,7 +5,7 @@
 //! ```rust
 //! # extern crate soup;
 //! # use std::error::Error;
-//! # use soup::Soup;
+//! # use soup::prelude::*;
 //!
 //! # fn main() -> Result<(), Box<Error>> {
 //!
@@ -22,11 +22,20 @@
 //!   </body>
 //! </html>
 //! "#;
+//!
 //! let soup = Soup::new(html);
 //!
-//! assert_eq!(&soup.title().to_string()[..], "My title"); // tag string content
-//! assert_eq!(soup.title().name, "title"); // tag name
-//! assert_eq!(&soup.find().tag("p").execute()?.to_string(), "Some text");
+//! # assert_eq!(&soup.title().to_string()[..], "My title"); // tag string content
+//! # assert_eq!(soup.title().name, "title"); // tag name
+//! assert_eq!(
+//!     soup.find()
+//!         .tag("p")
+//!         .execute()?
+//!         .and_then(|p| p.text()),
+//!     Some("Some text".to_string())
+//! );
+//!
+//! /*
 //! assert_eq!(
 //!     soup.find_all()
 //!         .tag("p")
@@ -39,6 +48,7 @@
 //!         "Some more text",
 //!     ]
 //! );
+//! */
 //!
 //! #   Ok(())
 //! # }
@@ -47,18 +57,27 @@ use std::io::Read;
 use html5ever::{
     parse_document,
     rcdom::{
-        self, RcDom, Handle,
+        RcDom, Handle,
     },
     tendril::TendrilSink,
 };
 use failure::Fallible;
 
-use crate::find::{
-    SingleResultQueryExecutor,
-    MultipleResultQueryExecutor,
+use crate::{
+    find::{
+        SingleResultQueryExecutor,
+        MultipleResultQueryExecutor,
+    },
 };
 
+pub mod prelude {
+    pub use crate::find::{Find, FindAll};
+    pub use crate::Soup;
+    pub use crate::node_ext::NodeExt;
+}
+
 mod find;
+mod node_ext;
 
 #[derive(Clone)]
 pub struct Soup {
@@ -95,51 +114,35 @@ impl Soup {
     }
 }
 
-impl<'node> find::Find<'node> for Soup {
-    type QueryExecutor = SingleResultQueryExecutor<'node>;
+impl find::Find for Soup {
+    type QueryExecutor = SingleResultQueryExecutor;
 
-    fn find(&'node self) -> Self::QueryExecutor {
+    fn find(&self) -> Self::QueryExecutor {
         self.handle.find()
     }
 }
 
-impl<'node> find::FindAll<'node> for Soup {
-    type QueryExecutor = MultipleResultQueryExecutor<'node>;
+impl find::FindAll for Soup {
+    type QueryExecutor = MultipleResultQueryExecutor;
 
-    fn find_all(&'node self) -> Self::QueryExecutor {
+    fn find_all(&self) -> Self::QueryExecutor {
         self.handle.find_all()
     }
 }
 
-impl<'node> find::Find<'node> for Handle {
-    type QueryExecutor = SingleResultQueryExecutor<'node>;
+impl find::Find for Handle {
+    type QueryExecutor = SingleResultQueryExecutor;
 
-    fn find(&'node self) -> Self::QueryExecutor {
-        SingleResultQueryExecutor::new(&*self)
+    fn find(&self) -> Self::QueryExecutor {
+        SingleResultQueryExecutor::new(self.clone())
     }
 }
 
-impl<'node> find::FindAll<'node> for Handle {
-    type QueryExecutor = MultipleResultQueryExecutor<'node>;
+impl find::FindAll for Handle {
+    type QueryExecutor = MultipleResultQueryExecutor;
 
-    fn find_all(&'node self) -> Self::QueryExecutor {
-        MultipleResultQueryExecutor::new(&*self)
-    }
-}
-
-impl<'node> find::Find<'node> for &'node rcdom::Node {
-    type QueryExecutor = SingleResultQueryExecutor<'node>;
-
-    fn find(&'node self) -> Self::QueryExecutor {
-        SingleResultQueryExecutor::new(self)
-    }
-}
-
-impl<'node> find::FindAll<'node> for &'node rcdom::Node {
-    type QueryExecutor = MultipleResultQueryExecutor<'node>;
-
-    fn find_all(&'node self) -> Self::QueryExecutor {
-        MultipleResultQueryExecutor::new(self)
+    fn find_all(&self) -> Self::QueryExecutor {
+        MultipleResultQueryExecutor::new(self.clone())
     }
 }
 
@@ -164,6 +167,6 @@ mod tests {
     fn find() {
         let soup = Soup::new(TEST_HTML_STRING);
         let result = soup.find().tag("p").execute().unwrap().unwrap();
-        assert_eq!(&result.to_string()[..], "One");
+        assert_eq!(result.text(), Some("One".to_string()));
     }
 }

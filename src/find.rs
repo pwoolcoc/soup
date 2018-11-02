@@ -1,17 +1,17 @@
 use std::fmt;
-use html5ever::rcdom;
+use html5ever::rcdom::{self, Handle, NodeData};
 use failure::Fallible;
 
-pub(crate) trait Find<'node> {
-    type QueryExecutor: QueryExecutor<'node>;
+pub trait Find {
+    type QueryExecutor: QueryExecutor;
 
-    fn find(&'node self) -> Self::QueryExecutor;
+    fn find(&self) -> Self::QueryExecutor;
 }
 
-pub(crate) trait FindAll<'node> {
-    type QueryExecutor: QueryExecutor<'node>;
+pub trait FindAll {
+    type QueryExecutor: QueryExecutor;
 
-    fn find_all(&'node self) -> Self::QueryExecutor;
+    fn find_all(&self) -> Self::QueryExecutor;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -22,21 +22,48 @@ enum QueryType {
 
 impl QueryType {
     fn matches(&self, node: &rcdom::Node) -> bool {
-        true
+        match self {
+            QueryType::Tag(ref s) => self.match_tag(s, node),
+            QueryType::Attr(ref k, ref v) => self.match_attr(k, v, node),
+        }
+    }
+
+    fn match_tag(&self, tag: &str, node: &rcdom::Node) -> bool {
+        match node.data {
+            NodeData::Element { ref name, .. } => {
+                tag == name.local.as_ref()
+            },
+            _ => false
+        }
+    }
+
+    fn match_attr(&self, key: &str, value: &str, node: &rcdom::Node) -> bool {
+        match node.data {
+            NodeData::Element { ref attrs, .. } => {
+                let attrs = attrs.borrow();
+                let mut iter = attrs.iter();
+                if let Some(ref attr) = iter.find(|attr| attr.name.local.as_ref() == key) {
+                    attr.value.as_ref() == value
+                } else {
+                    false
+                }
+            },
+            _ => false
+        }
     }
 }
 
-pub trait QueryExecutor<'node> {
+pub trait QueryExecutor {
     type Output;
 
     fn execute(&mut self) -> Fallible<Self::Output>;
 }
 
 #[derive(Debug, Clone)]
-pub struct SingleResultQueryExecutor<'node>(QueryBuilder<'node>);
+pub struct SingleResultQueryExecutor(QueryBuilder);
 
-impl<'node> SingleResultQueryExecutor<'node> {
-    pub fn new(node: &'node rcdom::Node) -> SingleResultQueryExecutor<'node> {
+impl SingleResultQueryExecutor {
+    pub fn new(node: Handle) -> SingleResultQueryExecutor {
         SingleResultQueryExecutor(QueryBuilder::new(node))
     }
 
@@ -59,29 +86,29 @@ impl<'node> SingleResultQueryExecutor<'node> {
         self
     }
 
-    pub fn execute(&mut self) -> Fallible<Option<&'node rcdom::Node>> {
+    pub fn execute(&mut self) -> Fallible<Option<Handle>> {
         QueryExecutor::execute(self)
     }
 }
 
-impl<'node> QueryExecutor<'node> for SingleResultQueryExecutor<'node> {
-    type Output = Option<&'node rcdom::Node>;
+impl QueryExecutor for SingleResultQueryExecutor {
+    type Output = Option<Handle>;
 
     fn execute(&mut self) -> Fallible<Self::Output> {
         let mut results = vec![];
-        execute_query(self.0.handle, &self.0.queries, &mut self.0.depth_limit, &mut results)?;
+        execute_query(&self.0.handle, &self.0.queries, &mut self.0.depth_limit, &mut results)?;
         Ok(match results {
             ref nodes if nodes.is_empty() => None,
-            ref mut nodes => Some(&nodes.remove(0))
+            ref mut nodes => Some(nodes.remove(0))
         })
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct MultipleResultQueryExecutor<'node>(QueryBuilder<'node>);
+pub struct MultipleResultQueryExecutor(QueryBuilder);
 
-impl<'node> MultipleResultQueryExecutor<'node> {
-    pub fn new(node: &'node rcdom::Node) -> MultipleResultQueryExecutor<'node> {
+impl MultipleResultQueryExecutor {
+    pub fn new(node: Handle) -> MultipleResultQueryExecutor {
         MultipleResultQueryExecutor(QueryBuilder::new(node))
     }
 
@@ -104,36 +131,36 @@ impl<'node> MultipleResultQueryExecutor<'node> {
         self
     }
 
-    pub fn execute(&mut self) -> Fallible<Vec<&'node rcdom::Node>> {
+    pub fn execute(&mut self) -> Fallible<Vec<Handle>> {
         QueryExecutor::execute(self)
     }
 }
 
-impl<'node> QueryExecutor<'node> for MultipleResultQueryExecutor<'node> {
-    type Output = Vec<&'node rcdom::Node>;
+impl QueryExecutor for MultipleResultQueryExecutor {
+    type Output = Vec<Handle>;
 
     fn execute(&mut self) -> Fallible<Self::Output> { // TODO: should I impl Find & FindAll for html5ever::Node or should these be wrapped?
         let mut results = vec![];
-        execute_query(self.0.handle, &self.0.queries, &mut self.0.depth_limit, &mut results)?;
+        execute_query(&self.0.handle, &self.0.queries, &mut self.0.depth_limit, &mut results)?;
         Ok(results)
     }
 }
 
 #[derive(Clone)]
-pub struct QueryBuilder<'node> {
-    handle: &'node rcdom::Node,
+pub struct QueryBuilder {
+    handle: Handle,
     queries: Vec<QueryType>,
     depth_limit: Option<usize>,
 }
 
-impl<'node> fmt::Debug for QueryBuilder<'node> {
+impl fmt::Debug for QueryBuilder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "QueryBuilder(&rcdom::Node, {:?})", self.queries)
+        write!(f, "QueryBuilder(Handle, {:?})", self.queries)
     }
 }
 
-impl<'node> QueryBuilder<'node> {
-    fn new(handle: &'node rcdom::Node) -> QueryBuilder<'node> {
+impl QueryBuilder {
+    fn new(handle: Handle) -> QueryBuilder {
         QueryBuilder {
             handle,
             queries: vec![],
@@ -141,33 +168,33 @@ impl<'node> QueryBuilder<'node> {
         }
     }
 
-    pub fn max_depth(&mut self, depth: usize) -> &mut QueryBuilder<'node> {
+    pub fn max_depth(&mut self, depth: usize) -> &mut QueryBuilder {
         self.depth_limit = Some(depth);
         self
     }
 
-    pub fn tag(&mut self, tag: &str) -> &mut QueryBuilder<'node> {
+    pub fn tag(&mut self, tag: &str) -> &mut QueryBuilder {
         self.queries.push(QueryType::Tag(tag.to_string()));
         self
     }
 
-    pub fn attr(&mut self, name: &str, value: &str) -> &mut QueryBuilder<'node> {
+    pub fn attr(&mut self, name: &str, value: &str) -> &mut QueryBuilder {
         self.queries.push(QueryType::Attr(name.to_string(), value.to_string()));
         self
     }
 
-    pub fn class(&mut self, value: &str) -> &mut QueryBuilder<'node> {
+    pub fn class(&mut self, value: &str) -> &mut QueryBuilder {
         self.attr("class", value);
         self
     }
 }
 
-fn execute_query<'node>(node: &'node rcdom::Node, queries: &[QueryType], remaining_depth: &mut Option<usize>, found_nodes: &mut Vec<&'node rcdom::Node>) -> Fallible<()> {
+fn execute_query<'node>(node: &Handle, queries: &[QueryType], remaining_depth: &mut Option<usize>, found_nodes: &mut Vec<Handle>) -> Fallible<()> {
     let has_children = {
         !node.children.borrow().is_empty()
     };
     if queries.iter().all(|query| query.matches(&node)) {
-        found_nodes.push(node);
+        found_nodes.push(node.clone());
     }
     if let Some(ref d) = remaining_depth {
         if *d == 0 || !has_children {
