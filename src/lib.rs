@@ -25,8 +25,6 @@
 //!
 //! let soup = Soup::new(html);
 //!
-//! # assert_eq!(&soup.title().to_string()[..], "My title"); // tag string content
-//! # assert_eq!(soup.title().name, "title"); // tag name
 //! assert_eq!(
 //!     soup.find()
 //!         .tag("p")
@@ -34,21 +32,6 @@
 //!         .and_then(|p| p.text()),
 //!     Some("Some text".to_string())
 //! );
-//!
-//! /*
-//! assert_eq!(
-//!     soup.find_all()
-//!         .tag("p")
-//!         .execute()?
-//!         .iter()
-//!         .map(|p| p.to_string())
-//!         .collect::<Vec<_>>(),
-//!     vec![
-//!         "Some text",
-//!         "Some more text",
-//!     ]
-//! );
-//! */
 //!
 //! #   Ok(())
 //! # }
@@ -152,6 +135,7 @@ impl find::FindAll for Handle {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::prelude::*;
 
     const TEST_HTML_STRING: &'static str = r#"
 <!doctype html>
