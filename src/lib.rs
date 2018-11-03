@@ -1,44 +1,74 @@
 //! Inspired by the Python library "BeautifulSoup," `soup` is a layer on top of `html5ever` that
 //! aims to provide a slightly different API for querying & manipulating HTML
 //!
-//! # Examples
+//! # Examples (inspired by bs4's docs)
 //!
-//! ```rust
+//! ```
 //! # extern crate soup;
-//! # use std::error::Error;
 //! # use soup::prelude::*;
-//! # fn main() -> Result<(), Box<Error>> {
-//! let html = r#"
-//! <!DOCTYPE html>
-//! <html>
-//!   <head>
-//!     <title>My title</title>
-//!   </head>
-//!   <body>
-//!     <h1>My Heading</h1>
-//!     <p>Some text</p>
-//!     <p>Some more text</p>
-//!   </body>
-//! </html>
+//! 
+//! const THREE_SISTERS: &'static str = r#"
+//!<html><head><title>The Dormouse's story</title></head>
+//!<body>
+//!<p class="title"><b>The Dormouse's story</b></p>
+//! 
+//!<p class="story">Once upon a time there were three little sisters; and their names were
+//!<a href="http://example.com/elsie" class="sister" id="link1">Elsie</a>,
+//!<a href="http://example.com/lacie" class="sister" id="link2">Lacie</a> and
+//!<a href="http://example.com/tillie" class="sister" id="link3">Tillie</a>;
+//!and they lived at the bottom of a well.</p>
+//! 
+//!<p class="story">...</p>
 //! "#;
+//! # fn main() {
 //!
-//! let soup = Soup::new(html);
+//! let soup = Soup::new(THREE_SISTERS);
 //!
-//! assert_eq!(
-//!     soup.tag("p")
-//!         .find()
-//!         .and_then(|p| p.text()),
-//!     Some("Some text".to_string())
-//! );
 //!
-//! assert_eq!(
-//!     soup.tag("p")
-//!         .find_all()
-//!         .map(|p| p.text())
-//!         .collect::<Vec<_>>(),
-//!     vec![Some("Some text".to_string()), Some("Some more text".to_string())]
-//! );
-//! #   Ok(())
+//! let title = soup.tag("title").find().unwrap();
+//! # // assert_eq!(title.to_string(), "<title>The Dormouse's story</title>");
+//! assert_eq!(title.name(), "title");
+//! assert_eq!(title.text(), Some("The Dormouse's story".to_string()));
+//! # // assert_eq!(title.parent().name(), "head");
+//!
+//! let p = soup.tag("p").find().unwrap();
+//! # // assert_eq!(p.to_string(), r#"<p class="title"><b>The Dormouse's story</b></p>"#);
+//! assert_eq!(p.get("class"), Some("title".to_string()));
+//! # let a = soup.tag("a").find().unwrap();
+//! # // assert_eq!(a.to_string(), r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>"#);
+//! # let a_s = soup.tag("a").find_all().collect::<Vec<_>>();
+//! # // assert_eq!(
+//! # //    a_s.iter().map(|a| a.to_string()).collect::<Vec<_>>().join("\n"),
+//! # //    r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>\n<a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>\n<a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>"#
+//! # //);
+//!
+//!
+//! let expected = [
+//!     "http://example.com/elsie",
+//!     "http://example.com/lacie",
+//!     "http://example.com/tillie",
+//! ];
+//!
+//! for (i, link) in soup.tag("a").find_all().enumerate() {
+//!     let href = link.get("href").unwrap();
+//!     assert_eq!(href, expected[i].to_string());
+//! }
+//! 
+//!
+//! let text = soup.text().unwrap();
+//! assert_eq!(text,
+//! r#"The Dormouse's story
+//! 
+//!The Dormouse's story
+//! 
+//!Once upon a time there were three little sisters; and their names were
+//!Elsie,
+//!Lacie and
+//!Tillie;
+//!and they lived at the bottom of a well.
+//!
+//!...
+//! "#);
 //! # }
 //! ```
 extern crate failure;
