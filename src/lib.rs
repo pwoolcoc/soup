@@ -25,17 +25,15 @@
 //! let soup = Soup::new(html);
 //!
 //! assert_eq!(
-//!     soup.find()
-//!         .tag("p")
-//!         .execute()
+//!     soup.tag("p")
+//!         .find()
 //!         .and_then(|p| p.text()),
 //!     Some("Some text".to_string())
 //! );
 //!
 //! assert_eq!(
-//!     soup.find_all()
-//!         .tag("p")
-//!         .execute()
+//!     soup.tag("p")
+//!         .find_all()
 //!         .map(|p| p.text())
 //!         .collect::<Vec<_>>(),
 //!     vec![Some("Some text".to_string()), Some("Some more text".to_string())]
@@ -58,19 +56,16 @@ use failure::Fallible;
 
 use crate::{
     find::{
-        SingleResultQueryExecutor,
-        MultipleResultQueryExecutor,
+        QueryBuilder,
     },
 };
 
 /// This module exports all the important types & traits to use `soup` effectively
 pub mod prelude {
-    pub use crate::find::{Find, FindAll};
     pub use crate::Soup;
     pub use crate::node_ext::NodeExt;
 }
 
-pub use crate::find::{Find, FindAll};
 pub use crate::node_ext::NodeExt;
 
 mod find;
@@ -143,80 +138,33 @@ impl Soup {
             handle: dom.document,
         })
     }
-}
 
-impl find::Find for Soup {
-    type QueryExecutor = SingleResultQueryExecutor;
-
-    /// Implementation of `soup.find()`
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # extern crate soup;
-    /// # use std::error::Error;
-    /// # use soup::prelude::*;
-    /// # fn main() -> Result<(), Box<Error>> {
-    /// let html = "<!doctype html><html><head><title>foo</title></head><body></body></html>";
-    /// let soup = Soup::new(html);
-    /// assert_eq!(
-    ///     soup.find()
-    ///         .tag("title")
-    ///         .execute()
-    ///         .and_then(|title| {
-    ///             title.text()
-    ///         }),
-    ///     Some("foo".to_string()));
-    /// #   Ok(())
-    /// # }
-    /// ```
-    fn find(&self) -> Self::QueryExecutor {
-        self.handle.find()
+    /// Starts building a Query, with limit `limit`
+    pub fn limit(&self, limit: usize) -> QueryBuilder {
+        let mut qb = QueryBuilder::new(self.handle.clone());
+        qb.limit(limit);
+        qb
     }
-}
 
-impl find::FindAll for Soup {
-    type QueryExecutor = MultipleResultQueryExecutor;
-
-    /// Implementation of `soup.find_all()`
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # extern crate soup;
-    /// # use std::error::Error;
-    /// # use soup::prelude::*;
-    /// # fn main() -> Result<(), Box<Error>> {
-    /// let html = "<!doctype html><html><head><title>foo</title></head><body><p>one</p><p>two</p></body></html>";
-    /// let soup = Soup::new(html);
-    /// assert_eq!(
-    ///     soup.find_all()
-    ///         .tag("p")
-    ///         .execute()
-    ///         .map(|p| p.text())
-    ///         .collect::<Vec<_>>(),
-    ///     vec![Some("one".to_string()), Some("two".to_string())]);
-    /// #   Ok(())
-    /// # }
-    /// ```
-    fn find_all(&self) -> Self::QueryExecutor {
-        self.handle.find_all()
+    /// Starts building a Query, with tag `tag`
+    pub fn tag(&self, tag: &str) -> QueryBuilder {
+        let mut qb = QueryBuilder::new(self.handle.clone());
+        qb.tag(tag);
+        qb
     }
-}
 
-impl find::Find for Handle {
-    type QueryExecutor = SingleResultQueryExecutor;
-
-    fn find(&self) -> Self::QueryExecutor {
-        SingleResultQueryExecutor::new(self.clone())
+    /// Starts building a Query, with attr `attr`
+    pub fn attr(&self, name: &str, value: &str) -> QueryBuilder {
+        let mut qb = QueryBuilder::new(self.handle.clone());
+        qb.attr(name, value);
+        qb
     }
-}
 
-impl find::FindAll for Handle {
-    type QueryExecutor = MultipleResultQueryExecutor;
-
-    fn find_all(&self) -> Self::QueryExecutor {
-        MultipleResultQueryExecutor::new(self.clone())
+    /// Starts building a Query, with class `class`
+    pub fn class(&self, value: &str) -> QueryBuilder {
+        let mut qb = QueryBuilder::new(self.handle.clone());
+        qb.class(value);
+        qb
     }
 }
 
@@ -240,7 +188,7 @@ mod tests {
     #[test]
     fn find() {
         let soup = Soup::new(TEST_HTML_STRING);
-        let result = soup.find().tag("p").execute().unwrap();
+        let result = soup.tag("p").find().unwrap();
         assert_eq!(result.text(), Some("One".to_string()));
     }
 }

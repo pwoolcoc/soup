@@ -1,10 +1,15 @@
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+};
 use html5ever::rcdom::{self, Handle, NodeData};
 use failure::Fallible;
 
+use crate::find::QueryBuilder;
+
 /// Adds some convenience methods to the `html5ever::rcdom::Node` type
-pub trait NodeExt {
+pub trait NodeExt: Sized {
     fn get_node(&self) -> &rcdom::Node;
+    fn get_handle(self) -> Handle;
 
     /// Retrieves the name of the node
     ///
@@ -40,7 +45,7 @@ pub trait NodeExt {
     /// # use soup::prelude::*;
     /// # fn main() -> Result<(), Box<Error>> {
     /// let soup = Soup::new(r#"<div class="foo bar"></div>"#);
-    /// let div = soup.find().tag("div").execute().unwrap();
+    /// let div = soup.tag("div").find().unwrap();
     /// assert_eq!(div.get("class"), Some("foo bar".to_string()));
     /// #   Ok(())
     /// # }
@@ -85,6 +90,40 @@ pub trait NodeExt {
             Err(..) => None
         }
     }
+
+    // QueryBuilder constructor methods
+
+    /// Starts building a Query, with limit `limit`
+    fn limit(self, limit: usize) -> QueryBuilder {
+        let handle = self.get_handle();
+        let mut qb = QueryBuilder::new(handle);
+        qb.limit(limit);
+        qb
+    }
+
+    /// Starts building a Query, with tag `tag`
+    fn tag(self, tag: &str) -> QueryBuilder {
+        let handle = self.get_handle();
+        let mut qb = QueryBuilder::new(handle);
+        qb.tag(tag);
+        qb
+    }
+
+    /// Starts building a Query, with attr `attr`
+    fn attr(self, name: &str, value: &str) -> QueryBuilder {
+        let handle = self.get_handle();
+        let mut qb = QueryBuilder::new(handle);
+        qb.attr(name, value);
+        qb
+    }
+
+    /// Starts building a Query, with class `class`
+    fn class(self, value: &str) -> QueryBuilder {
+        let handle = self.get_handle();
+        let mut qb = QueryBuilder::new(handle);
+        qb.class(value);
+        qb
+    }
 }
 
 fn extract_text(node: &rcdom::Node, result: &mut Vec<String>) -> Fallible<()> {
@@ -99,15 +138,13 @@ fn extract_text(node: &rcdom::Node, result: &mut Vec<String>) -> Fallible<()> {
     Ok(())
 }
 
-impl<'node> NodeExt for &'node rcdom::Node {
-    fn get_node(&self) -> &rcdom::Node {
-        self
-    }
-}
-
 impl NodeExt for Handle {
     fn get_node(&self) -> &rcdom::Node {
         &*self
+    }
+
+    fn get_handle(self) -> Handle {
+        self
     }
 }
 
@@ -119,7 +156,7 @@ mod tests {
     #[test]
     fn name() {
         let soup = Soup::new("<b>some text</b>");
-        let b = soup.find().tag("b").execute().unwrap();
+        let b = soup.tag("b").find().unwrap();
         let name = b.name();
         assert_eq!(name, "b");
     }
@@ -127,7 +164,7 @@ mod tests {
     #[test]
     fn get() {
         let soup = Soup::new(r#"<div class="one two"></div>"#);
-        let div = soup.find().tag("div").execute().unwrap();
+        let div = soup.tag("div").find().unwrap();
         let class = div.get("class");
         assert_eq!(class, Some("one two".to_string()));
     }
@@ -135,7 +172,7 @@ mod tests {
     #[test]
     fn attrs() {
         let soup = Soup::new(r#"<div class="one two" id="some-id"></div>"#);
-        let div = soup.find().tag("div").execute().unwrap();
+        let div = soup.tag("div").find().unwrap();
         let attrs = div.attrs();
         let mut expected = BTreeMap::new();
         expected.insert("class".to_string(), "one two".to_string());
