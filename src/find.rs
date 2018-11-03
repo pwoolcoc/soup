@@ -57,7 +57,6 @@ pub trait Find {
 ///     soup.find_all()
 ///         .tag("p")
 ///         .execute()?
-///         .iter()
 ///         .map(|p| p.text())
 ///         .collect::<Vec<_>>(),
 ///     vec![Some("First paragraph".to_string()), Some("Second paragraph".to_string())]
@@ -147,7 +146,7 @@ impl QueryExecutor for SingleResultQueryExecutor {
     type Output = Option<Handle>;
 
     fn execute(&mut self) -> Fallible<Self::Output> {
-        let result = execute_query(&self.0.handle, &self.0.queries, Some(1)).nth(0);
+        let result = execute_query(&self.0.handle, self.0.queries.clone(), Some(1)).nth(0);
         Ok(result)
     }
 }
@@ -179,17 +178,16 @@ impl MultipleResultQueryExecutor {
         self
     }
 
-    pub fn execute(&mut self) -> Fallible<Vec<Handle>> {
+    pub fn execute(&mut self) -> Fallible<BoxNodeIter> {
         QueryExecutor::execute(self)
     }
 }
 
 impl QueryExecutor for MultipleResultQueryExecutor {
-    type Output = Vec<Handle>;
+    type Output = BoxNodeIter;
 
     fn execute(&mut self) -> Fallible<Self::Output> { // TODO: should I impl Find & FindAll for html5ever::Node or should these be wrapped?
-        let results = execute_query(&self.0.handle, &self.0.queries, self.0.limit).collect::<Vec<_>>();
-        Ok(results)
+        Ok(execute_query(&self.0.handle, self.0.queries.clone(), self.0.limit))
     }
 }
 
@@ -236,14 +234,14 @@ impl QueryBuilder {
     }
 }
 
-struct NodeIterator<'query> {
+struct NodeIterator {
     handle: Handle,
-    queries: &'query [QueryType],
+    queries: Vec<QueryType>,
     done: bool,
 }
 
-impl<'query> NodeIterator<'query> {
-    fn new(handle: Handle, queries: &'query [QueryType]) -> NodeIterator<'query> {
+impl NodeIterator {
+    fn new(handle: Handle, queries: Vec<QueryType>) -> NodeIterator {
         NodeIterator {
             handle,
             queries,
@@ -252,7 +250,7 @@ impl<'query> NodeIterator<'query> {
     }
 }
 
-impl<'query> Iterator for NodeIterator<'query> {
+impl Iterator for NodeIterator {
     type Item = Option<Handle>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -271,18 +269,18 @@ impl<'query> Iterator for NodeIterator<'query> {
     }
 }
 
-type BoxOptionNodeIter<'a> = Box<Iterator<Item=Option<Handle>> + 'a>;
-type BoxNodeIter<'a> = Box<Iterator<Item=Handle> + 'a>;
+type BoxOptionNodeIter = Box<Iterator<Item=Option<Handle>>>;
+type BoxNodeIter = Box<Iterator<Item=Handle>>;
 
-fn build_iter<'query>(handle: Handle, queries: &'query [QueryType]) -> BoxOptionNodeIter<'query> {
-    let iter = NodeIterator::new(handle.clone(), queries);
+fn build_iter(handle: Handle, queries: Vec<QueryType>) -> BoxOptionNodeIter {
+    let iter = NodeIterator::new(handle.clone(), queries.clone());
     handle.children.borrow().iter().fold(Box::new(iter) as BoxOptionNodeIter, |acc, child| {
-        let child_iter = build_iter(child.clone(), queries);
+        let child_iter = build_iter(child.clone(), queries.clone());
         Box::new(acc.chain(Box::new(child_iter) as BoxOptionNodeIter)) as BoxOptionNodeIter
     })
 }
 
-fn execute_query<'query>(node: &Handle, queries: &'query [QueryType], limit: Option<usize>) -> BoxNodeIter<'query> {
+fn execute_query(node: &Handle, queries: Vec<QueryType>, limit: Option<usize>) -> BoxNodeIter {
     let iter = build_iter(node.clone(), queries);
     let mut iter = Box::new(iter.flat_map(|node| node)) as BoxNodeIter;
     if let Some(limit) = limit {

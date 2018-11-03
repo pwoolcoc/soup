@@ -36,7 +36,6 @@
 //!     soup.find_all()
 //!         .tag("p")
 //!         .execute()?
-//!         .iter()
 //!         .map(|p| p.text())
 //!         .collect::<Vec<_>>(),
 //!     vec![Some("Some text".to_string()), Some("Some more text".to_string())]
@@ -194,7 +193,6 @@ impl find::FindAll for Soup {
     ///     soup.find_all()
     ///         .tag("p")
     ///         .execute()?
-    ///         .iter()
     ///         .map(|p| p.text())
     ///         .collect::<Vec<_>>(),
     ///     vec![Some("one".to_string()), Some("two".to_string())]);
