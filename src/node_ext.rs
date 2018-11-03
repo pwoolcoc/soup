@@ -40,7 +40,7 @@ pub trait NodeExt {
     /// # use soup::prelude::*;
     /// # fn main() -> Result<(), Box<Error>> {
     /// let soup = Soup::new(r#"<div class="foo bar"></div>"#);
-    /// let div = soup.find().tag("div").execute()?.unwrap();
+    /// let div = soup.find().tag("div").execute().unwrap();
     /// assert_eq!(div.get("class"), Some("foo bar".to_string()));
     /// #   Ok(())
     /// # }
@@ -119,7 +119,7 @@ mod tests {
     #[test]
     fn name() {
         let soup = Soup::new("<b>some text</b>");
-        let b = soup.find().tag("b").execute().unwrap().unwrap();
+        let b = soup.find().tag("b").execute().unwrap();
         let name = b.name();
         assert_eq!(name, "b");
     }
@@ -127,7 +127,7 @@ mod tests {
     #[test]
     fn get() {
         let soup = Soup::new(r#"<div class="one two"></div>"#);
-        let div = soup.find().tag("div").execute().unwrap().unwrap();
+        let div = soup.find().tag("div").execute().unwrap();
         let class = div.get("class");
         assert_eq!(class, Some("one two".to_string()));
     }
@@ -135,7 +135,7 @@ mod tests {
     #[test]
     fn attrs() {
         let soup = Soup::new(r#"<div class="one two" id="some-id"></div>"#);
-        let div = soup.find().tag("div").execute().unwrap().unwrap();
+        let div = soup.find().tag("div").execute().unwrap();
         let attrs = div.attrs();
         let mut expected = BTreeMap::new();
         expected.insert("class".to_string(), "one two".to_string());

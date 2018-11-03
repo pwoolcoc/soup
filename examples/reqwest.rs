@@ -10,13 +10,12 @@ fn main() -> Result<(), Box<Error>> {
     let result = soup.find()
         .tag("section")
         .attr("id", "main")
-        .execute()?
+        .execute()
         .and_then(|section| {
             section.find()
                 .tag("span")
                 .attr("class", "in-band")
                 .execute()
-                .unwrap()
                 .and_then(|span| span.text())
         });
     assert_eq!(result, Some("Crate \nsoup".to_string()));

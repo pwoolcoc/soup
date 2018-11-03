@@ -1,6 +1,5 @@
 use std::fmt;
 use html5ever::rcdom::{self, Handle, NodeData};
-use failure::Fallible;
 
 /// Builds a query that returns the first element that matches
 ///
@@ -22,7 +21,7 @@ use failure::Fallible;
 /// "#;
 /// let soup = Soup::new(html);
 /// assert_eq!(
-///     soup.find().tag("p").execute()?.and_then(|p| p.text()),
+///     soup.find().tag("p").execute().and_then(|p| p.text()),
 ///     Some("First paragraph".to_string())
 /// );
 /// #   Ok(())
@@ -56,7 +55,7 @@ pub trait Find {
 /// assert_eq!(
 ///     soup.find_all()
 ///         .tag("p")
-///         .execute()?
+///         .execute()
 ///         .map(|p| p.text())
 ///         .collect::<Vec<_>>(),
 ///     vec![Some("First paragraph".to_string()), Some("Second paragraph".to_string())]
@@ -112,7 +111,7 @@ impl QueryType {
 pub trait QueryExecutor {
     type Output;
 
-    fn execute(&mut self) -> Fallible<Self::Output>;
+    fn execute(&mut self) -> Self::Output;
 }
 
 #[derive(Debug, Clone)]
@@ -137,7 +136,7 @@ impl SingleResultQueryExecutor {
         self
     }
 
-    pub fn execute(&mut self) -> Fallible<Option<Handle>> {
+    pub fn execute(&mut self) -> Option<Handle> {
         QueryExecutor::execute(self)
     }
 }
@@ -145,9 +144,8 @@ impl SingleResultQueryExecutor {
 impl QueryExecutor for SingleResultQueryExecutor {
     type Output = Option<Handle>;
 
-    fn execute(&mut self) -> Fallible<Self::Output> {
-        let result = execute_query(&self.0.handle, self.0.queries.clone(), Some(1)).nth(0);
-        Ok(result)
+    fn execute(&mut self) -> Self::Output {
+        execute_query(&self.0.handle, self.0.queries.clone(), Some(1)).nth(0)
     }
 }
 
@@ -178,7 +176,7 @@ impl MultipleResultQueryExecutor {
         self
     }
 
-    pub fn execute(&mut self) -> Fallible<BoxNodeIter> {
+    pub fn execute(&mut self) -> BoxNodeIter {
         QueryExecutor::execute(self)
     }
 }
@@ -186,8 +184,8 @@ impl MultipleResultQueryExecutor {
 impl QueryExecutor for MultipleResultQueryExecutor {
     type Output = BoxNodeIter;
 
-    fn execute(&mut self) -> Fallible<Self::Output> { // TODO: should I impl Find & FindAll for html5ever::Node or should these be wrapped?
-        Ok(execute_query(&self.0.handle, self.0.queries.clone(), self.0.limit))
+    fn execute(&mut self) -> Self::Output { // TODO: should I impl Find & FindAll for html5ever::Node or should these be wrapped?
+        execute_query(&self.0.handle, self.0.queries.clone(), self.0.limit)
     }
 }
 

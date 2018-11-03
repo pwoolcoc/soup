@@ -27,7 +27,7 @@
 //! assert_eq!(
 //!     soup.find()
 //!         .tag("p")
-//!         .execute()?
+//!         .execute()
 //!         .and_then(|p| p.text()),
 //!     Some("Some text".to_string())
 //! );
@@ -35,7 +35,7 @@
 //! assert_eq!(
 //!     soup.find_all()
 //!         .tag("p")
-//!         .execute()?
+//!         .execute()
 //!         .map(|p| p.text())
 //!         .collect::<Vec<_>>(),
 //!     vec![Some("Some text".to_string()), Some("Some more text".to_string())]
@@ -162,7 +162,7 @@ impl find::Find for Soup {
     /// assert_eq!(
     ///     soup.find()
     ///         .tag("title")
-    ///         .execute()?
+    ///         .execute()
     ///         .and_then(|title| {
     ///             title.text()
     ///         }),
@@ -192,7 +192,7 @@ impl find::FindAll for Soup {
     /// assert_eq!(
     ///     soup.find_all()
     ///         .tag("p")
-    ///         .execute()?
+    ///         .execute()
     ///         .map(|p| p.text())
     ///         .collect::<Vec<_>>(),
     ///     vec![Some("one".to_string()), Some("two".to_string())]);
@@ -240,7 +240,7 @@ mod tests {
     #[test]
     fn find() {
         let soup = Soup::new(TEST_HTML_STRING);
-        let result = soup.find().tag("p").execute().unwrap().unwrap();
+        let result = soup.find().tag("p").execute().unwrap();
         assert_eq!(result.text(), Some("One".to_string()));
     }
 }
