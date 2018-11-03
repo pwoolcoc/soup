@@ -125,11 +125,6 @@ impl SingleResultQueryExecutor {
     }
 
     // forward these calls to the underlying builder
-    pub fn max_depth(&mut self, depth: usize) -> &mut Self {
-        self.0.max_depth(depth);
-        self
-    }
-
     pub fn tag(&mut self, tag: &str) -> &mut Self {
         self.0.tag(tag);
         self
@@ -152,12 +147,8 @@ impl QueryExecutor for SingleResultQueryExecutor {
     type Output = Option<Handle>;
 
     fn execute(&mut self) -> Fallible<Self::Output> {
-        let mut results = vec![];
-        execute_query(&self.0.handle, &self.0.queries, &mut self.0.depth_limit, &mut results)?;
-        Ok(match results {
-            ref nodes if nodes.is_empty() => None,
-            ref mut nodes => Some(nodes.remove(0))
-        })
+        let result = execute_query(&self.0.handle, &self.0.queries, Some(1)).nth(0);
+        Ok(result)
     }
 }
 
@@ -170,8 +161,8 @@ impl MultipleResultQueryExecutor {
     }
 
     // forward these calls to the underlying builder
-    pub fn max_depth(&mut self, depth: usize) -> &mut Self {
-        self.0.max_depth(depth);
+    pub fn limit(&mut self, limit: usize) -> &mut Self {
+        self.0.limit(limit);
         self
     }
 
@@ -197,8 +188,7 @@ impl QueryExecutor for MultipleResultQueryExecutor {
     type Output = Vec<Handle>;
 
     fn execute(&mut self) -> Fallible<Self::Output> { // TODO: should I impl Find & FindAll for html5ever::Node or should these be wrapped?
-        let mut results = vec![];
-        execute_query(&self.0.handle, &self.0.queries, &mut self.0.depth_limit, &mut results)?;
+        let results = execute_query(&self.0.handle, &self.0.queries, self.0.limit).collect::<Vec<_>>();
         Ok(results)
     }
 }
@@ -207,7 +197,7 @@ impl QueryExecutor for MultipleResultQueryExecutor {
 pub struct QueryBuilder {
     handle: Handle,
     queries: Vec<QueryType>,
-    depth_limit: Option<usize>,
+    limit: Option<usize>,
 }
 
 impl fmt::Debug for QueryBuilder {
@@ -221,12 +211,12 @@ impl QueryBuilder {
         QueryBuilder {
             handle,
             queries: vec![],
-            depth_limit: None,
+            limit: None,
         }
     }
 
-    pub fn max_depth(&mut self, depth: usize) -> &mut QueryBuilder {
-        self.depth_limit = Some(depth);
+    pub fn limit(&mut self, limit: usize) -> &mut QueryBuilder {
+        self.limit = Some(limit);
         self
     }
 
@@ -246,30 +236,57 @@ impl QueryBuilder {
     }
 }
 
-fn execute_query<'node>(node: &Handle, queries: &[QueryType], remaining_depth: &mut Option<usize>, found_nodes: &mut Vec<Handle>) -> Fallible<()> {
-    let has_children = {
-        !node.children.borrow().is_empty()
-    };
-    if queries.iter().all(|query| query.matches(&node)) {
-        found_nodes.push(node.clone());
-    }
-    if let Some(ref d) = remaining_depth {
-        if *d == 0 || !has_children {
-            Ok(())
-        } else {
-            for child in node.children.borrow().iter() {
-                execute_query(child, queries, &mut remaining_depth.map(|d| d - 1), found_nodes)?;
-            }
-            Ok(())
-        }
-    } else {
-        if has_children {
-            for child in node.children.borrow().iter() {
-                execute_query(child, queries, remaining_depth, found_nodes)?;
-            }
-            Ok(())
-        } else {
-            Ok(())
+struct NodeIterator<'query> {
+    handle: Handle,
+    queries: &'query [QueryType],
+    done: bool,
+}
+
+impl<'query> NodeIterator<'query> {
+    fn new(handle: Handle, queries: &'query [QueryType]) -> NodeIterator<'query> {
+        NodeIterator {
+            handle,
+            queries,
+            done: false,
         }
     }
+}
+
+impl<'query> Iterator for NodeIterator<'query> {
+    type Item = Option<Handle>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.done { return None; }
+        if self.queries.iter().all(|query| query.matches(&self.handle)) {
+            self.done = true;
+            Some(Some(self.handle.clone()))
+        } else {
+            self.done = true;
+            Some(None)
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(1))
+    }
+}
+
+type BoxOptionNodeIter<'a> = Box<Iterator<Item=Option<Handle>> + 'a>;
+type BoxNodeIter<'a> = Box<Iterator<Item=Handle> + 'a>;
+
+fn build_iter<'query>(handle: Handle, queries: &'query [QueryType]) -> BoxOptionNodeIter<'query> {
+    let iter = NodeIterator::new(handle.clone(), queries);
+    handle.children.borrow().iter().fold(Box::new(iter) as BoxOptionNodeIter, |acc, child| {
+        let child_iter = build_iter(child.clone(), queries);
+        Box::new(acc.chain(Box::new(child_iter) as BoxOptionNodeIter)) as BoxOptionNodeIter
+    })
+}
+
+fn execute_query<'query>(node: &Handle, queries: &'query [QueryType], limit: Option<usize>) -> BoxNodeIter<'query> {
+    let iter = build_iter(node.clone(), queries);
+    let mut iter = Box::new(iter.flat_map(|node| node)) as BoxNodeIter;
+    if let Some(limit) = limit {
+        iter = Box::new(iter.take(limit)) as BoxNodeIter;
+    }
+    iter
 }
