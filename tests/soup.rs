@@ -1,0 +1,62 @@
+// TODO: any assertion commented out is a test that we won't pass yet
+extern crate soup;
+use soup::prelude::*;
+
+const THREE_SISTERS: &'static str = include_str!("data/three_sisters.html");
+
+fn soup() -> Soup {
+    Soup::new(THREE_SISTERS)
+}
+
+#[test]
+fn simple_nav() {
+    let soup = soup();
+    let title = soup.tag("title").find().unwrap();
+    // assert_eq!(title.to_string(), "<title>The Dormouse's story</title>");
+    assert_eq!(title.name(), "title");
+    assert_eq!(title.text(), Some("The Dormouse's story".into()));
+    // assert_eq!(title.parent().name(), "head");
+    let p = soup.tag("p").find().unwrap();
+    // assert_eq!(p.to_string(), r#"<p class="title"><b>The Dormouse's story</b></p>"#);
+    assert_eq!(p.get("class"), Some("title".to_string()));
+    let a = soup.tag("a").find().unwrap();
+    // assert_eq!(a.to_string(), r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>"#);
+    let a_s = soup.tag("a").find_all().collect::<Vec<_>>();
+    // assert_eq!(
+    //     a_s.iter().map(|a| a.to_string()).collect::<Vec<_>>().join("\n"),
+    //     r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>\n<a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>\n<a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>"#
+    // );
+}
+
+#[test]
+fn extract_all_links() {
+    let soup = soup();
+    let expected = [
+        "http://example.com/elsie",
+        "http://example.com/lacie",
+        "http://example.com/tillie",
+    ];
+    for (i, link) in soup.tag("a").find_all().enumerate() {
+        let href = link.get("href").unwrap();
+        assert_eq!(href, expected[i].to_string());
+    }
+}
+
+#[test]
+fn extract_all_text_from_page() {
+    let soup = soup();
+    let text = soup.text().unwrap();
+    assert_eq!(text,
+r#"The Dormouse's story
+
+The Dormouse's story
+
+Once upon a time there were three little sisters; and their names were
+Elsie,
+Lacie and
+Tillie;
+and they lived at the bottom of a well.
+
+...
+"#);
+}

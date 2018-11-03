@@ -166,6 +166,11 @@ impl Soup {
         qb.class(value);
         qb
     }
+
+    /// Extracts all text from the HTML
+    pub fn text(&self) -> Option<String> {
+        self.handle.text()
+    }
 }
 
 #[cfg(test)]
@@ -190,5 +195,15 @@ mod tests {
         let soup = Soup::new(TEST_HTML_STRING);
         let result = soup.tag("p").find().unwrap();
         assert_eq!(result.text(), Some("One".to_string()));
+    }
+
+    #[test]
+    fn find_all() {
+        let soup = Soup::new(TEST_HTML_STRING);
+        let result = soup.tag("p")
+            .find_all()
+            .flat_map(|p| p.text())
+            .collect::<Vec<_>>();
+        assert_eq!(result, vec!["One".to_string(), "Two".to_string()]);
     }
 }

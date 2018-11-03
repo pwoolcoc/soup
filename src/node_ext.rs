@@ -86,7 +86,7 @@ pub trait NodeExt: Sized {
         let node = self.get_node();
         let mut result = vec![];
         match extract_text(node, &mut result) {
-            Ok(..) => Some(result.join("\n")),
+            Ok(..) => Some(result.join("")),
             Err(..) => None
         }
     }
