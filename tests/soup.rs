@@ -12,20 +12,22 @@ fn soup() -> Soup {
 fn simple_nav() {
     let soup = soup();
     let title = soup.tag("title").find().unwrap();
-    // assert_eq!(title.to_string(), "<title>The Dormouse's story</title>");
+    assert_eq!(title.display(), "<title>The Dormouse's story</title>");
     assert_eq!(title.name(), "title");
     assert_eq!(title.text(), Some("The Dormouse's story".into()));
     // assert_eq!(title.parent().name(), "head");
     let p = soup.tag("p").find().unwrap();
-    // assert_eq!(p.to_string(), r#"<p class="title"><b>The Dormouse's story</b></p>"#);
+    assert_eq!(p.display(), r#"<p class="title"><b>The Dormouse's story</b></p>"#);
     assert_eq!(p.get("class"), Some("title".to_string()));
     let a = soup.tag("a").find().unwrap();
-    // assert_eq!(a.to_string(), r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>"#);
+    assert_eq!(a.display(), r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>"#);
     let a_s = soup.tag("a").find_all().collect::<Vec<_>>();
-    // assert_eq!(
-    //     a_s.iter().map(|a| a.to_string()).collect::<Vec<_>>().join("\n"),
-    //     r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>\n<a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>\n<a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>"#
-    // );
+    assert_eq!(
+        a_s.iter().map(|a| a.display()).collect::<Vec<_>>().join("\n"),
+        r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>
+<a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>
+<a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>"#
+    );
 }
 
 #[test]

@@ -124,6 +124,33 @@ pub trait NodeExt: Sized {
         qb.class(value);
         qb
     }
+
+    /// Returns the node as an html tag
+    fn display(&self) -> String {
+        let node = self.get_node();
+        match node.data {
+            NodeData::Element { ref name, ref attrs, .. } => {
+                let c = node.children.borrow().iter().map(|child| child.display()).collect::<Vec<_>>().join("");
+                let mut a = attrs.borrow().iter().map(|attr| {
+                    format!(r#"{}="{}""#, attr.name.local, attr.value.as_ref())
+                }).collect::<Vec<_>>();
+                a.sort();
+                let a = a.join(" ");
+                if a.is_empty() {
+                    format!("<{}>{}</{}>", name.local.as_ref(), c, name.local.as_ref())
+                } else {
+                    format!("<{} {}>{}</{}>", name.local.as_ref(), a, c, name.local.as_ref())
+                }
+            },
+            NodeData::Text { ref contents, .. } => {
+                contents.borrow().as_ref().to_string()
+            },
+            NodeData::Comment { ref contents, .. } => {
+                format!("<!--{}-->", contents.as_ref())
+            },
+            _ => "".to_string()
+        }
+    }
 }
 
 fn extract_text(node: &rcdom::Node, result: &mut Vec<String>) -> Fallible<()> {
@@ -178,5 +205,21 @@ mod tests {
         expected.insert("class".to_string(), "one two".to_string());
         expected.insert("id".to_string(), "some-id".to_string());
         assert_eq!(attrs, expected);
+    }
+
+    #[test]
+    fn display() {
+        let soup = Soup::new(r#"<div class="foo bar" id="baz"></div>"#);
+        let div = soup.tag("div").find().unwrap();
+        assert_eq!(div.display(), r#"<div class="foo bar" id="baz"></div>"#);
+
+        let soup = Soup::new(r#"<div class="foo bar" id="baz"><b>SOME TEXT</b></div>"#);
+        let div = soup.tag("div").find().unwrap();
+        assert_eq!(div.display(), r#"<div class="foo bar" id="baz"><b>SOME TEXT</b></div>"#);
+
+        let soup = Soup::new(r#"<div class="foo bar" id="baz"><b>SOME TEXT <!-- and a comment --></b></div>"#);
+        let div = soup.tag("div").find().unwrap();
+        let b = div.tag("b").find().unwrap();
+        assert_eq!(b.display(), r#"<b>SOME TEXT <!-- and a comment --></b>"#);
     }
 }
