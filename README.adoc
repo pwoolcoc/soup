@@ -13,7 +13,7 @@ In order to use, add the following to your `Cargo.toml`:
 
 ----
 [dependencies]
-soup = "0.1"
+soup = "0.2"
 ----
 
 == Usage
@@ -31,10 +31,9 @@ use soup::prelude::*;
 fn main() -> Result<(), Box<Error>> {
     let response = reqwest::get("https://google.com")?;
     let soup = Soup::from_reader(response);
-    let some_text = soup.find()
-    			.tag("p")
+    let some_text = soup.tag("p")
 			.attr("class", "hidden")
-			.execute()?
+			.find()
 			.and_then(|p| p.text());
 }
 
