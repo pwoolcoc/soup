@@ -1,10 +1,14 @@
-use std::fmt;
+use std::{
+    rc::Rc,
+    fmt
+};
 use html5ever::rcdom::{self, Handle, NodeData};
 
-#[derive(Debug, Clone, PartialEq)]
+use crate::pattern::Pattern;
+
 enum QueryType {
-    Tag(String),
-    Attr(String, String),
+    Tag(Box<dyn Pattern>),
+    Attr(Box<dyn Pattern>, Box<dyn Pattern>),
 }
 
 impl QueryType {
@@ -15,22 +19,22 @@ impl QueryType {
         }
     }
 
-    fn match_tag(&self, tag: &str, node: &rcdom::Node) -> bool {
+    fn match_tag(&self, tag: &Box<dyn Pattern>, node: &rcdom::Node) -> bool {
         match node.data {
             NodeData::Element { ref name, .. } => {
-                tag == name.local.as_ref()
+                tag.matches(name.local.as_ref())
             },
             _ => false
         }
     }
 
-    fn match_attr(&self, key: &str, value: &str, node: &rcdom::Node) -> bool {
+    fn match_attr(&self, key: &Box<dyn Pattern>, value: &Box<dyn Pattern>, node: &rcdom::Node) -> bool {
         match node.data {
             NodeData::Element { ref attrs, .. } => {
                 let attrs = attrs.borrow();
                 let mut iter = attrs.iter();
-                if let Some(ref attr) = iter.find(|attr| attr.name.local.as_ref() == key) {
-                    attr.value.as_ref() == value
+                if let Some(ref attr) = iter.find(|attr| key.matches(attr.name.local.as_ref())) {
+                    value.matches(attr.value.as_ref())
                 } else {
                     false
                 }
@@ -58,13 +62,13 @@ impl QueryType {
 #[derive(Clone)]
 pub struct QueryBuilder {
     handle: Handle,
-    queries: Vec<QueryType>,
+    queries: Vec<Rc<QueryType>>,
     limit: Option<usize>,
 }
 
 impl fmt::Debug for QueryBuilder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "QueryBuilder(«Handle», {:?})", self.queries)
+        write!(f, "QueryBuilder(«Handle», «Queries»)")
     }
 }
 
@@ -114,8 +118,8 @@ impl QueryBuilder {
     /// #   Ok(())
     /// # }
     /// ```
-    pub fn tag(&mut self, tag: &str) -> &mut QueryBuilder {
-        self.queries.push(QueryType::Tag(tag.to_string()));
+    pub fn tag<P: 'static + Pattern>(&mut self, tag: P) -> &mut QueryBuilder {
+        self.queries.push(Rc::new(QueryType::Tag(Box::new(tag))));
         self
     }
 
@@ -135,7 +139,7 @@ impl QueryBuilder {
     /// # }
     /// ```
     pub fn attr(&mut self, name: &str, value: &str) -> &mut QueryBuilder {
-        self.queries.push(QueryType::Attr(name.to_string(), value.to_string()));
+        self.queries.push(Rc::new(QueryType::Attr(Box::new(name.to_string()), Box::new(value.to_string()))));
         self
     }
 
@@ -204,12 +208,12 @@ impl QueryBuilder {
 
 struct NodeIterator {
     handle: Handle,
-    queries: Vec<QueryType>,
+    queries: Vec<Rc<QueryType>>,
     done: bool,
 }
 
 impl NodeIterator {
-    fn new(handle: Handle, queries: Vec<QueryType>) -> NodeIterator {
+    fn new(handle: Handle, queries: Vec<Rc<QueryType>>) -> NodeIterator {
         NodeIterator {
             handle,
             queries,
@@ -254,7 +258,7 @@ impl IntoIterator for QueryBuilder {
     }
 }
 
-fn build_iter(handle: Handle, queries: Vec<QueryType>) -> BoxOptionNodeIter {
+fn build_iter(handle: Handle, queries: Vec<Rc<QueryType>>) -> BoxOptionNodeIter {
     let iter = NodeIterator::new(handle.clone(), queries.clone());
     handle.children.borrow().iter().fold(Box::new(iter) as BoxOptionNodeIter, |acc, child| {
         let child_iter = build_iter(child.clone(), queries.clone());

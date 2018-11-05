@@ -11,6 +11,10 @@ repository = "https://gitlab.com/pwoolcoc/soup.git"
 
 [dependencies]
 html5ever = "0.22.3"
+regex = { version = "1.0.5", optional = true }
 
 [dev-dependencies]
 reqwest = "0.9.4"
+
+[features]
+default = ["regex"]

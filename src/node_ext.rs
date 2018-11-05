@@ -3,7 +3,10 @@ use std::{
 };
 use html5ever::rcdom::{self, Handle, NodeData};
 
-use crate::find::QueryBuilder;
+use crate::{
+    find::QueryBuilder,
+    pattern::Pattern,
+};
 
 /// Adds some convenience methods to the `html5ever::rcdom::Node` type
 pub trait NodeExt: Sized {
@@ -99,7 +102,7 @@ pub trait NodeExt: Sized {
     }
 
     /// Starts building a Query, with tag `tag`
-    fn tag(self, tag: &str) -> QueryBuilder {
+    fn tag<P: 'static + Pattern>(self, tag: P) -> QueryBuilder {
         let handle = self.get_handle();
         let mut qb = QueryBuilder::new(handle);
         qb.tag(tag);

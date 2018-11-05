@@ -1,5 +1,10 @@
 // TODO: any assertion commented out is a test that we won't pass yet
+#[cfg(feature = "regex")]
+extern crate regex;
 extern crate soup;
+
+#[cfg(feature = "regex")]
+use regex::Regex;
 use soup::prelude::*;
 
 const THREE_SISTERS: &'static str = include_str!("data/three_sisters.html");
@@ -61,4 +66,17 @@ and they lived at the bottom of a well.
 
 ...
 "#);
+}
+
+#[test]
+#[cfg(feature = "regex")]
+fn find_with_regex() {
+    let soup = soup();
+    let expected = [
+        "body",
+        "b",
+    ];
+    for (i, tag) in soup.tag(Regex::new("^b").unwrap()).find_all().enumerate() {
+        assert_eq!(tag.name(), expected[i].to_string());
+    }
 }

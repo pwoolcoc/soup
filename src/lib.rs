@@ -73,7 +73,29 @@
 //! "#);
 //! # }
 //! ```
+//!
+//! You can use more than just strings to search for results:
+//!
+//! ```rust
+//! # extern crate regex;
+//! # extern crate soup;
+//! # use soup::prelude::*;
+//! # use std::error::Error;
+//! use regex::Regex;
+//! # fn main() -> Result<(), Box<Error>> {
+//!
+//! let soup = Soup::new(r#"<body><p>some text, <b>Some bold text</b></p></body>"#);
+//! let results = soup.tag(Regex::new("^b")?)
+//!                   .find_all()
+//!                   .map(|tag| tag.name().to_string())
+//!                   .collect::<Vec<_>>();
+//! assert_eq!(results, vec!["body".to_string(), "b".to_string()]);
+//! #   Ok(())
+//! # }
+//!
 extern crate html5ever;
+#[cfg(feature = "regex")]
+extern crate regex;
 
 use std::io::{self, Read};
 use html5ever::{
@@ -83,6 +105,8 @@ use html5ever::{
     },
     tendril::TendrilSink,
 };
+
+use crate::pattern::Pattern;
 
 /// This module exports all the important types & traits to use `soup` effectively
 pub mod prelude {
@@ -95,6 +119,7 @@ pub use crate::node_ext::NodeExt;
 
 mod find;
 mod node_ext;
+pub mod pattern;
 
 /// Parses HTML & provides methods to query & manipulate the document
 #[derive(Clone)]
@@ -172,7 +197,7 @@ impl Soup {
     }
 
     /// Starts building a Query, with tag `tag`
-    pub fn tag(&self, tag: &str) -> QueryBuilder {
+    pub fn tag<P: 'static + Pattern>(&self, tag: P) -> QueryBuilder {
         let mut qb = QueryBuilder::new(self.handle.clone());
         qb.tag(tag);
         qb
