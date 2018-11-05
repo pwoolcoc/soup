@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<Error>> {
                 .tag("span")
                 .attr("class", "in-band")
                 .find()
-                .and_then(|span| span.text())
+                .map(|span| span.text())
         });
     assert_eq!(result, Some("Crate \nsoup".to_string()));
     Ok(())

@@ -28,7 +28,7 @@
 //! let title = soup.tag("title").find().unwrap();
 //! assert_eq!(title.display(), "<title>The Dormouse's story</title>");
 //! assert_eq!(title.name(), "title");
-//! assert_eq!(title.text(), Some("The Dormouse's story".to_string()));
+//! assert_eq!(title.text(), "The Dormouse's story".to_string());
 //! # // assert_eq!(title.parent().name(), "head");
 //!
 //! let p = soup.tag("p").find().unwrap();
@@ -57,7 +57,7 @@
 //! }
 //! 
 //!
-//! let text = soup.text().unwrap();
+//! let text = soup.text();
 //! assert_eq!(text,
 //! r#"The Dormouse's story
 //! 
@@ -73,10 +73,9 @@
 //! "#);
 //! # }
 //! ```
-extern crate failure;
 extern crate html5ever;
 
-use std::io::Read;
+use std::io::{self, Read};
 use html5ever::{
     parse_document,
     rcdom::{
@@ -84,7 +83,6 @@ use html5ever::{
     },
     tendril::TendrilSink,
 };
-use failure::Fallible;
 
 /// This module exports all the important types & traits to use `soup` effectively
 pub mod prelude {
@@ -157,7 +155,7 @@ impl Soup {
     /// #   Ok(())
     /// # }
     /// ```
-    pub fn from_reader<R: Read>(mut reader: R) -> Fallible<Soup> {
+    pub fn from_reader<R: Read>(mut reader: R) -> io::Result<Soup> {
         let dom = parse_document(RcDom::default(), Default::default())
                 .from_utf8()
                 .read_from(&mut reader)?;
@@ -195,7 +193,7 @@ impl Soup {
     }
 
     /// Extracts all text from the HTML
-    pub fn text(&self) -> Option<String> {
+    pub fn text(&self) -> String {
         self.handle.text()
     }
 }
@@ -221,7 +219,7 @@ mod tests {
     fn find() {
         let soup = Soup::new(TEST_HTML_STRING);
         let result = soup.tag("p").find().unwrap();
-        assert_eq!(result.text(), Some("One".to_string()));
+        assert_eq!(result.text(), "One".to_string());
     }
 
     #[test]
@@ -229,7 +227,7 @@ mod tests {
         let soup = Soup::new(TEST_HTML_STRING);
         let result = soup.tag("p")
             .find_all()
-            .flat_map(|p| p.text())
+            .map(|p| p.text())
             .collect::<Vec<_>>();
         assert_eq!(result, vec!["One".to_string(), "Two".to_string()]);
     }

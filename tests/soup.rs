@@ -14,7 +14,7 @@ fn simple_nav() {
     let title = soup.tag("title").find().unwrap();
     assert_eq!(title.display(), "<title>The Dormouse's story</title>");
     assert_eq!(title.name(), "title");
-    assert_eq!(title.text(), Some("The Dormouse's story".into()));
+    assert_eq!(title.text(), "The Dormouse's story".to_string());
     // assert_eq!(title.parent().name(), "head");
     let p = soup.tag("p").find().unwrap();
     assert_eq!(p.display(), r#"<p class="title"><b>The Dormouse's story</b></p>"#);
@@ -47,7 +47,7 @@ fn extract_all_links() {
 #[test]
 fn extract_all_text_from_page() {
     let soup = soup();
-    let text = soup.text().unwrap();
+    let text = soup.text();
     assert_eq!(text,
 r#"The Dormouse's story
 

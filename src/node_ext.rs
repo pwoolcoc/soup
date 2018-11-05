@@ -2,7 +2,6 @@ use std::{
     collections::BTreeMap,
 };
 use html5ever::rcdom::{self, Handle, NodeData};
-use failure::Fallible;
 
 use crate::find::QueryBuilder;
 
@@ -82,13 +81,11 @@ pub trait NodeExt: Sized {
     }
 
     /// Retrieves the text value of this element, as well as it's child elements
-    fn text(&self) -> Option<String> {
+    fn text(&self) -> String {
         let node = self.get_node();
         let mut result = vec![];
-        match extract_text(node, &mut result) {
-            Ok(..) => Some(result.join("")),
-            Err(..) => None
-        }
+        extract_text(node, &mut result);
+        result.join("")
     }
 
     // QueryBuilder constructor methods
@@ -153,16 +150,15 @@ pub trait NodeExt: Sized {
     }
 }
 
-fn extract_text(node: &rcdom::Node, result: &mut Vec<String>) -> Fallible<()> {
+fn extract_text(node: &rcdom::Node, result: &mut Vec<String>) {
     match node.data {
         NodeData::Text { ref contents, .. } => result.push(contents.borrow().to_string()),
         _ => (),
     }
     let children = node.children.borrow();
     for child in children.iter() {
-        extract_text(child, result)?;
+        extract_text(child, result);
     }
-    Ok(())
 }
 
 impl NodeExt for Handle {
