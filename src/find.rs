@@ -138,8 +138,11 @@ impl QueryBuilder {
     /// #   Ok(())
     /// # }
     /// ```
-    pub fn attr(&mut self, name: &str, value: &str) -> &mut QueryBuilder {
-        self.queries.push(Rc::new(QueryType::Attr(Box::new(name.to_string()), Box::new(value.to_string()))));
+    pub fn attr<P, Q>(&mut self, name: P, value: Q) -> &mut QueryBuilder
+            where P: 'static + Pattern,
+                  Q: 'static + Pattern,
+    {
+        self.queries.push(Rc::new(QueryType::Attr(Box::new(name), Box::new(value))));
         self
     }
 
@@ -158,7 +161,7 @@ impl QueryBuilder {
     /// #   Ok(())
     /// # }
     /// ```
-    pub fn class(&mut self, value: &str) -> &mut QueryBuilder {
+    pub fn class<P: 'static + Pattern>(&mut self, value: P) -> &mut QueryBuilder {
         self.attr("class", value);
         self
     }

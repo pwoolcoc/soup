@@ -204,14 +204,17 @@ impl Soup {
     }
 
     /// Starts building a Query, with attr `attr`
-    pub fn attr(&self, name: &str, value: &str) -> QueryBuilder {
+    pub fn attr<P, Q>(&self, name: P, value: Q) -> QueryBuilder
+            where P: 'static + Pattern,
+                  Q: 'static + Pattern,
+    {
         let mut qb = QueryBuilder::new(self.handle.clone());
         qb.attr(name, value);
         qb
     }
 
     /// Starts building a Query, with class `class`
-    pub fn class(&self, value: &str) -> QueryBuilder {
+    pub fn class<P: 'static + Pattern>(&self, value: P) -> QueryBuilder {
         let mut qb = QueryBuilder::new(self.handle.clone());
         qb.class(value);
         qb

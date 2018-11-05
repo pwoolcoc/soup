@@ -110,7 +110,10 @@ pub trait NodeExt: Sized {
     }
 
     /// Starts building a Query, with attr `attr`
-    fn attr(self, name: &str, value: &str) -> QueryBuilder {
+    fn attr<P, Q>(self, name: P, value: Q) -> QueryBuilder
+            where P: 'static + Pattern,
+                  Q: 'static + Pattern,
+    {
         let handle = self.get_handle();
         let mut qb = QueryBuilder::new(handle);
         qb.attr(name, value);
@@ -118,7 +121,7 @@ pub trait NodeExt: Sized {
     }
 
     /// Starts building a Query, with class `class`
-    fn class(self, value: &str) -> QueryBuilder {
+    fn class<P: 'static + Pattern>(self, value: P) -> QueryBuilder {
         let handle = self.get_handle();
         let mut qb = QueryBuilder::new(handle);
         qb.class(value);
