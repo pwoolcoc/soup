@@ -16,11 +16,11 @@ pub trait NodeExt: Sized {
     /// If this node is an element, the name of that element is returned. Otherwise, special names
     /// are used:
     ///
-    /// Document -> "[document]"
-    /// Doctype -> "[doctype]"
-    /// Text -> "[text]"
-    /// Comment -> "[comment]"
-    /// ProcessingInstruction -> "[processing-instruction]"
+    /// * Document -> "\[document\]"
+    /// * Doctype -> "\[doctype\]"
+    /// * Text -> "\[text\]"
+    /// * Comment -> "\[comment\]"
+    /// * ProcessingInstruction -> "\[processing-instruction\]"
     fn name(&self) -> &str {
         let node = self.get_node();
         match node.data {

@@ -86,18 +86,13 @@ use html5ever::{
 };
 use failure::Fallible;
 
-use crate::{
-    find::{
-        QueryBuilder,
-    },
-};
-
 /// This module exports all the important types & traits to use `soup` effectively
 pub mod prelude {
     pub use crate::Soup;
     pub use crate::node_ext::NodeExt;
 }
 
+pub use crate::find::QueryBuilder;
 pub use crate::node_ext::NodeExt;
 
 mod find;

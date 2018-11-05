@@ -40,6 +40,21 @@ impl QueryType {
     }
 }
 
+/// Construct a query to apply to an HTML tree
+///
+/// # Example
+///
+/// ```rust
+/// # extern crate soup;
+/// # use soup::prelude::*;
+/// # use std::error::Error;
+/// # fn main() -> Result<(), Box<Error>> {
+/// let soup = Soup::new(r#"<div id="foo">BAR</div><div id="baz">QUUX</div>"#);
+/// let query = soup.tag("div")         // result must be a div
+///                 .attr("id", "foo")  // with id "foo"
+///                 .find();            // executes the query, returns the first result
+/// #   Ok(())
+/// # }
 #[derive(Clone)]
 pub struct QueryBuilder {
     handle: Handle,
@@ -49,7 +64,7 @@ pub struct QueryBuilder {
 
 impl fmt::Debug for QueryBuilder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "QueryBuilder(Handle, {:?})", self.queries)
+        write!(f, "QueryBuilder(«Handle», {:?})", self.queries)
     }
 }
 
@@ -62,31 +77,126 @@ impl QueryBuilder {
         }
     }
 
+    /// Adds a limit to the number of results that can be returned
+    ///
+    /// This method adds an upper bound to the number of results that will be returned by the query
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// # use std::error::Error;
+    /// # use soup::prelude::*;
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let soup = Soup::new(r#"<div id="one"></div><div id="two"></div><div id="three></div>"#);
+    /// let results = soup.tag("div").limit(2).find_all().collect::<Vec<_>>();
+    /// assert_eq!(results.len(), 2);
+    /// #   Ok(())
+    /// # }
+    /// ```
     pub fn limit(&mut self, limit: usize) -> &mut QueryBuilder {
         self.limit = Some(limit);
         self
     }
 
+    /// Specifies a tag for which to search
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// # use std::error::Error;
+    /// # use soup::prelude::*;
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let soup = Soup::new(r#"<div>Test</div><section><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
+    /// let result = soup.tag("b").find().unwrap();
+    /// assert_eq!(result.get("id"), Some("bold-tag".to_string()));
+    /// #   Ok(())
+    /// # }
+    /// ```
     pub fn tag(&mut self, tag: &str) -> &mut QueryBuilder {
         self.queries.push(QueryType::Tag(tag.to_string()));
         self
     }
 
+    /// Specifies an attribute name/value pair for which to search
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// # use std::error::Error;
+    /// # use soup::prelude::*;
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let soup = Soup::new(r#"<div>Test</div><section><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
+    /// let result = soup.attr("id", "bold-tag").find().unwrap();
+    /// assert_eq!(result.name(), "b".to_string());
+    /// #   Ok(())
+    /// # }
+    /// ```
     pub fn attr(&mut self, name: &str, value: &str) -> &mut QueryBuilder {
         self.queries.push(QueryType::Attr(name.to_string(), value.to_string()));
         self
     }
 
+    /// Specifies a class name for which to search 
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// # use std::error::Error;
+    /// # use soup::prelude::*;
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let soup = Soup::new(r#"<div>Test</div><section class="content"><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
+    /// let result = soup.class("content").find().unwrap();
+    /// assert_eq!(result.name(), "section".to_string());
+    /// #   Ok(())
+    /// # }
+    /// ```
     pub fn class(&mut self, value: &str) -> &mut QueryBuilder {
         self.attr("class", value);
         self
     }
 
+    /// Executes the query, and returns either the first result, or `None`
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// # use std::error::Error;
+    /// # use soup::prelude::*;
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let soup = Soup::new(r#"<ul><li id="one">One</li><li id="two">Two</li><li id="three">Three</li></ul>"#);
+    /// let result = soup.tag("li").find().unwrap();
+    /// assert_eq!(result.get("id"), Some("one".to_string()));
+    /// #   Ok(())
+    /// # }
+    /// ```
     pub fn find(&mut self) -> Option<Handle> {
         self.limit = Some(1);
         self.clone().into_iter().nth(0)
     }
 
+    /// Executes the query, and returns an iterator of the results
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// # use std::error::Error;
+    /// # use soup::prelude::*;
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let soup = Soup::new(r#"<ul><li id="one">One</li><li id="two">Two</li><li id="three">Three</li></ul>"#);
+    /// let results = soup.tag("li").find_all().collect::<Vec<_>>();
+    /// assert_eq!(results.len(), 3);
+    /// assert_eq!(results[0].display(), "<li id=\"one\">One</li>");
+    /// assert_eq!(results[1].display(), "<li id=\"two\">Two</li>");
+    /// assert_eq!(results[2].display(), "<li id=\"three\">Three</li>");
+    /// #   Ok(())
+    /// # }
+    /// ```
     pub fn find_all(&self) -> BoxNodeIter {
         self.clone().into_iter()
     }
