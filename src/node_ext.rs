@@ -4,7 +4,12 @@ use std::{
 use html5ever::rcdom::{self, Handle, NodeData};
 
 use crate::{
-    find::QueryBuilder,
+    find::{
+        QueryBuilder,
+        QueryWrapper,
+        TagQuery,
+        AttrQuery,
+    },
     pattern::Pattern,
 };
 
@@ -94,38 +99,34 @@ pub trait NodeExt: Sized {
     // QueryBuilder constructor methods
 
     /// Starts building a Query, with limit `limit`
-    fn limit(self, limit: usize) -> QueryBuilder {
+    fn limit<'a>(self, limit: usize) -> QueryBuilder<'a, (), ()> {
         let handle = self.get_handle();
-        let mut qb = QueryBuilder::new(handle);
-        qb.limit(limit);
-        qb
+        let qb = QueryBuilder::new(handle);
+        qb.limit(limit)
     }
 
     /// Starts building a Query, with tag `tag`
-    fn tag<P: 'static + Pattern>(self, tag: P) -> QueryBuilder {
+    fn tag<'a, P: Pattern>(self, tag: P) -> QueryBuilder<'a, TagQuery<P>, QueryWrapper<'a, (), ()>> {
         let handle = self.get_handle();
-        let mut qb = QueryBuilder::new(handle);
-        qb.tag(tag);
-        qb
+        let qb = QueryBuilder::new(handle);
+        qb.tag(tag)
     }
 
     /// Starts building a Query, with attr `attr`
-    fn attr<P, Q>(self, name: P, value: Q) -> QueryBuilder
-            where P: 'static + Pattern,
-                  Q: 'static + Pattern,
+    fn attr<'a, P, Q>(self, name: P, value: Q) -> QueryBuilder<'a, AttrQuery<P,Q>, QueryWrapper<'a, (), ()>>
+            where P: Pattern,
+                  Q: Pattern,
     {
         let handle = self.get_handle();
-        let mut qb = QueryBuilder::new(handle);
-        qb.attr(name, value);
-        qb
+        let qb = QueryBuilder::new(handle);
+        qb.attr(name, value)
     }
 
     /// Starts building a Query, with class `class`
-    fn class<P: 'static + Pattern>(self, value: P) -> QueryBuilder {
+    fn class<'a, P: Pattern>(self, value: P) -> QueryBuilder<'a, AttrQuery<&'static str, P>, QueryWrapper<'a, (), ()>> {
         let handle = self.get_handle();
-        let mut qb = QueryBuilder::new(handle);
-        qb.class(value);
-        qb
+        let qb = QueryBuilder::new(handle);
+        qb.class(value)
     }
 
     /// Returns the node as an html tag

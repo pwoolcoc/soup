@@ -15,6 +15,7 @@ use regex::Regex;
 /// use soup::prelude::*;
 /// use soup::pattern::Pattern;
 ///
+/// #[derive(Clone)]
 /// struct MyType(String);
 ///
 /// impl Pattern for MyType {
@@ -29,8 +30,14 @@ use regex::Regex;
 ///                  .unwrap();
 /// assert_eq!(result.get("id").unwrap(), "foo".to_string());
 /// ```
-pub trait Pattern {
+pub trait Pattern: Clone {
     fn matches(&self, haystack: &str) -> bool;
+}
+
+impl Pattern for () {
+    fn matches(&self, _: &str) -> bool {
+        true
+    }
 }
 
 impl<'a> Pattern for &'a str {

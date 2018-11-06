@@ -107,6 +107,11 @@ use html5ever::{
 };
 
 use crate::pattern::Pattern;
+use crate::find::{
+    QueryWrapper,
+    AttrQuery,
+    TagQuery,
+};
 
 /// This module exports all the important types & traits to use `soup` effectively
 pub mod prelude {
@@ -190,34 +195,30 @@ impl Soup {
     }
 
     /// Starts building a Query, with limit `limit`
-    pub fn limit(&self, limit: usize) -> QueryBuilder {
-        let mut qb = QueryBuilder::new(self.handle.clone());
-        qb.limit(limit);
-        qb
+    pub fn limit<'a>(&self, limit: usize) -> QueryBuilder<'a, (), ()> {
+        let qb = QueryBuilder::new(self.handle.clone());
+        qb.limit(limit)
     }
 
     /// Starts building a Query, with tag `tag`
-    pub fn tag<P: 'static + Pattern>(&self, tag: P) -> QueryBuilder {
-        let mut qb = QueryBuilder::new(self.handle.clone());
-        qb.tag(tag);
-        qb
+    pub fn tag<'a, P: Pattern>(&self, tag: P) -> QueryBuilder<'a, TagQuery<P>, QueryWrapper<'a, (), ()>> {
+        let qb = QueryBuilder::new(self.handle.clone());
+        qb.tag(tag)
     }
 
     /// Starts building a Query, with attr `attr`
-    pub fn attr<P, Q>(&self, name: P, value: Q) -> QueryBuilder
-            where P: 'static + Pattern,
-                  Q: 'static + Pattern,
+    pub fn attr<'a, P, Q>(&self, name: P, value: Q) -> QueryBuilder<'a, AttrQuery<P, Q>, QueryWrapper<'a, (), ()>>
+            where P: Pattern,
+                  Q: Pattern,
     {
-        let mut qb = QueryBuilder::new(self.handle.clone());
-        qb.attr(name, value);
-        qb
+        let qb = QueryBuilder::new(self.handle.clone());
+        qb.attr(name, value)
     }
 
     /// Starts building a Query, with class `class`
-    pub fn class<P: 'static + Pattern>(&self, value: P) -> QueryBuilder {
-        let mut qb = QueryBuilder::new(self.handle.clone());
-        qb.class(value);
-        qb
+    pub fn class<'a, P: Pattern>(&self, value: P) -> QueryBuilder<'a, AttrQuery<&'static str, P>, QueryWrapper<'a, (), ()>> {
+        let qb = QueryBuilder::new(self.handle.clone());
+        qb.class(value)
     }
 
     /// Extracts all text from the HTML

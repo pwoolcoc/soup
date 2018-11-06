@@ -1,45 +1,121 @@
 use std::{
-    rc::Rc,
-    fmt
+    fmt,
+    marker::PhantomData,
 };
 use html5ever::rcdom::{self, Handle, NodeData};
 
 use crate::pattern::Pattern;
 
-enum QueryType {
-    Tag(Box<dyn Pattern>),
-    Attr(Box<dyn Pattern>, Box<dyn Pattern>),
+pub trait Query: Clone {
+    fn matches(&self, node: &rcdom::Node) -> bool;
 }
 
-impl QueryType {
-    fn matches(&self, node: &rcdom::Node) -> bool {
-        match self {
-            QueryType::Tag(ref s) => self.match_tag(s, node),
-            QueryType::Attr(ref k, ref v) => self.match_attr(k, v, node),
-        }
-    }
+#[derive(Clone)]
+pub struct TagQuery<P: Clone> {
+    inner: P
+}
 
-    fn match_tag(&self, tag: &Box<dyn Pattern>, node: &rcdom::Node) -> bool {
+impl<P: Pattern> TagQuery<P> {
+    fn new(inner: P) -> TagQuery<P> {
+        TagQuery { inner }
+    }
+}
+
+impl<P: Pattern> Query for TagQuery<P> {
+    fn matches(&self, node: &rcdom::Node) -> bool {
         match node.data {
             NodeData::Element { ref name, .. } => {
-                tag.matches(name.local.as_ref())
+                self.inner.matches(name.local.as_ref())
             },
             _ => false
         }
     }
+}
 
-    fn match_attr(&self, key: &Box<dyn Pattern>, value: &Box<dyn Pattern>, node: &rcdom::Node) -> bool {
+#[derive(Clone)]
+pub struct AttrQuery<K: Clone, V: Clone> {
+    key: K,
+    value: V,
+}
+
+impl<K, V> AttrQuery<K, V>
+    where K: Pattern,
+          V: Pattern,
+{
+    fn new(key: K, value: V) -> AttrQuery<K, V> {
+        AttrQuery { key, value }
+    }
+}
+
+impl<K, V> Query for AttrQuery<K, V>
+    where K: Pattern,
+          V: Pattern,
+{
+    fn matches(&self, node: &rcdom::Node) -> bool {
         match node.data {
             NodeData::Element { ref attrs, .. } => {
                 let attrs = attrs.borrow();
                 let mut iter = attrs.iter();
-                if let Some(ref attr) = iter.find(|attr| key.matches(attr.name.local.as_ref())) {
-                    value.matches(attr.value.as_ref())
+                if let Some(ref attr) = iter.find(|attr| self.key.matches(attr.name.local.as_ref())) {
+                    self.value.matches(attr.value.as_ref())
                 } else {
                     false
                 }
             },
             _ => false
+        }
+    }
+}
+
+impl Query for () {
+    fn matches(&self, _: &rcdom::Node) -> bool {
+        true
+    }
+}
+
+#[derive(Clone)]
+pub struct QueryWrapper<'a, T: Query, U: Query> {
+    inner: T,
+    next: Option<U>,
+    _l: PhantomData<&'a ()>,
+}
+
+// base case for the QueryWrapper
+impl<'a> QueryWrapper<'a, (), ()> {
+    fn new() -> QueryWrapper<'a, (), ()> {
+        QueryWrapper {
+            inner: (),
+            next: None as Option<()>,
+            _l: PhantomData,
+        }
+    }
+}
+
+impl<'a, T, U, V> QueryWrapper<'a, T, QueryWrapper<'a, U, V>>
+    where T: Query + 'a,
+          U: Query + 'a,
+          V: Query + 'a,
+{
+    fn wrap(inner: T, query: QueryWrapper<'a, U, V>) -> QueryWrapper<'a, T, QueryWrapper<'a, U, V>> {
+        QueryWrapper {
+            inner,
+            next: Some(query),
+            _l: PhantomData,
+        }
+    }
+}
+
+impl<'a, T, U> Query for QueryWrapper<'a, T, U>
+    where T: Query + 'a,
+          U: Query + 'a,
+{
+    fn matches(&self, node: &rcdom::Node) -> bool {
+        let inner_match = self.inner.matches(node);
+        if let Some(ref next) = self.next {
+            let next_match = next.matches(node);
+            next_match && inner_match
+        } else {
+            inner_match
         }
     }
 }
@@ -60,27 +136,32 @@ impl QueryType {
 /// #   Ok(())
 /// # }
 #[derive(Clone)]
-pub struct QueryBuilder {
+pub struct QueryBuilder<'a, T: Query + 'a=(), U: Query + 'a=()> {
     handle: Handle,
-    queries: Vec<Rc<QueryType>>,
+    queries: QueryWrapper<'a, T, U>,
     limit: Option<usize>,
 }
 
-impl fmt::Debug for QueryBuilder {
+impl<'a, T: Query + 'a, U: Query + 'a> fmt::Debug for QueryBuilder<'a, T, U> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "QueryBuilder(«Handle», «Queries»)")
     }
 }
 
-impl QueryBuilder {
-    pub(crate) fn new(handle: Handle) -> QueryBuilder {
+impl<'a> QueryBuilder<'a, (), ()> {
+    pub(crate) fn new(handle: Handle) -> QueryBuilder<'a, (), ()> {
         QueryBuilder {
             handle,
-            queries: vec![],
+            queries: QueryWrapper::new(),
             limit: None,
         }
     }
+}
 
+impl<'a, T, U> QueryBuilder<'a, T, U>
+    where T: Query + 'a,
+          U: Query + 'a,
+{
     /// Adds a limit to the number of results that can be returned
     ///
     /// This method adds an upper bound to the number of results that will be returned by the query
@@ -98,9 +179,18 @@ impl QueryBuilder {
     /// #   Ok(())
     /// # }
     /// ```
-    pub fn limit(&mut self, limit: usize) -> &mut QueryBuilder {
+    pub fn limit(mut self, limit: usize) -> QueryBuilder<'a, T, U> {
         self.limit = Some(limit);
         self
+    }
+
+    fn push_query<Q: Query + 'a>(self, query: Q) -> QueryBuilder<'a, Q, QueryWrapper<'a, T, U>> {
+        let queries = QueryWrapper::<'a, Q, QueryWrapper<T, U>>::wrap(query, self.queries);
+        QueryBuilder {
+            handle: self.handle,
+            queries: queries,
+            limit: self.limit,
+        }
     }
 
     /// Specifies a tag for which to search
@@ -118,9 +208,8 @@ impl QueryBuilder {
     /// #   Ok(())
     /// # }
     /// ```
-    pub fn tag<P: 'static + Pattern>(&mut self, tag: P) -> &mut QueryBuilder {
-        self.queries.push(Rc::new(QueryType::Tag(Box::new(tag))));
-        self
+    pub fn tag<P: Pattern>(self, tag: P) -> QueryBuilder<'a, TagQuery<P>, QueryWrapper<'a, T, U>> {
+        self.push_query(TagQuery::new(tag))
     }
 
     /// Specifies an attribute name/value pair for which to search
@@ -138,12 +227,11 @@ impl QueryBuilder {
     /// #   Ok(())
     /// # }
     /// ```
-    pub fn attr<P, Q>(&mut self, name: P, value: Q) -> &mut QueryBuilder
-            where P: 'static + Pattern,
-                  Q: 'static + Pattern,
+    pub fn attr<P, Q>(self, name: P, value: Q) -> QueryBuilder<'a, AttrQuery<P, Q>, QueryWrapper<'a, T, U>>
+            where P: Pattern,
+                  Q: Pattern,
     {
-        self.queries.push(Rc::new(QueryType::Attr(Box::new(name), Box::new(value))));
-        self
+        self.push_query(AttrQuery::new(name, value))
     }
 
     /// Specifies a class name for which to search 
@@ -161,9 +249,8 @@ impl QueryBuilder {
     /// #   Ok(())
     /// # }
     /// ```
-    pub fn class<P: 'static + Pattern>(&mut self, value: P) -> &mut QueryBuilder {
-        self.attr("class", value);
-        self
+    pub fn class<P: Pattern>(self, value: P) -> QueryBuilder<'a, AttrQuery<&'static str, P>, QueryWrapper<'a, T, U>> {
+        self.attr("class", value)
     }
 
     /// Executes the query, and returns either the first result, or `None`
@@ -204,19 +291,20 @@ impl QueryBuilder {
     /// #   Ok(())
     /// # }
     /// ```
-    pub fn find_all(&self) -> BoxNodeIter {
-        self.clone().into_iter()
+    pub fn find_all(self) -> BoxNodeIter<'a> {
+        self.into_iter()
     }
 }
 
-struct NodeIterator {
+
+struct NodeIterator<'a, T: Query + 'a, U: Query + 'a> {
     handle: Handle,
-    queries: Vec<Rc<QueryType>>,
+    queries: QueryWrapper<'a, T, U>,
     done: bool,
 }
 
-impl NodeIterator {
-    fn new(handle: Handle, queries: Vec<Rc<QueryType>>) -> NodeIterator {
+impl<'a, T: Query + 'a, U: Query + 'a> NodeIterator<'a, T, U> {
+    fn new(handle: Handle, queries: QueryWrapper<'a, T, U>) -> NodeIterator<'a, T, U> {
         NodeIterator {
             handle,
             queries,
@@ -225,12 +313,15 @@ impl NodeIterator {
     }
 }
 
-impl Iterator for NodeIterator {
+impl<'a, T, U> Iterator for NodeIterator<'a, T, U>
+    where T: Query + 'a,
+          U: Query + 'a,
+{
     type Item = Option<Handle>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.done { return None; }
-        if self.queries.iter().all(|query| query.matches(&self.handle)) {
+        if Query::matches(&self.queries, &self.handle) {
             self.done = true;
             Some(Some(self.handle.clone()))
         } else {
@@ -244,12 +335,13 @@ impl Iterator for NodeIterator {
     }
 }
 
-type BoxOptionNodeIter = Box<Iterator<Item=Option<Handle>>>;
-type BoxNodeIter = Box<Iterator<Item=Handle>>;
+type BoxOptionNodeIter<'a> = Box<Iterator<Item=Option<Handle>> + 'a>;
+type BoxNodeIter<'a> = Box<Iterator<Item=Handle> + 'a>;
 
-impl IntoIterator for QueryBuilder {
+
+impl<'a, T: Query + 'a, U: Query + 'a> IntoIterator for QueryBuilder<'a, T, U> {
     type Item = Handle;
-    type IntoIter = BoxNodeIter;
+    type IntoIter = BoxNodeIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         let iter = build_iter(self.handle.clone(), self.queries);
@@ -261,7 +353,7 @@ impl IntoIterator for QueryBuilder {
     }
 }
 
-fn build_iter(handle: Handle, queries: Vec<Rc<QueryType>>) -> BoxOptionNodeIter {
+fn build_iter<'a, T: Query + 'a, U: Query + 'a>(handle: Handle, queries: QueryWrapper<'a, T, U>) -> BoxOptionNodeIter<'a> {
     let iter = NodeIterator::new(handle.clone(), queries.clone());
     handle.children.borrow().iter().fold(Box::new(iter) as BoxOptionNodeIter, |acc, child| {
         let child_iter = build_iter(child.clone(), queries.clone());
