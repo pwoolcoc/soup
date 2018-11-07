@@ -19,6 +19,17 @@ impl<P: Pattern> TagQuery<P> {
     }
 }
 
+impl<P> fmt::Debug for TagQuery<P>
+where
+    P: Pattern + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("TagQuery")
+            .field("inner", &self.inner)
+            .finish()
+    }
+}
+
 impl<P: Pattern> Query for TagQuery<P> {
     fn matches(&self, node: &rcdom::Node) -> bool {
         match node.data {
@@ -45,6 +56,19 @@ where
             key,
             value,
         }
+    }
+}
+
+impl<K, V> fmt::Debug for AttrQuery<K, V>
+where
+    K: Pattern + fmt::Debug,
+    V: Pattern + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("AttrQuery")
+            .field("key", &self.key)
+            .field("value", &self.value)
+            .finish()
     }
 }
 
@@ -84,12 +108,26 @@ pub struct QueryWrapper<'a, T: Query, U: Query> {
     _l: PhantomData<&'a ()>,
 }
 
+impl<'a, T, U> fmt::Debug for QueryWrapper<'a, T, U>
+where
+    T: Query + fmt::Debug,
+    U: Query + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("QueryWrapper")
+            .field("inner", &self.inner)
+            .field("next", &self.next)
+            .finish()
+    }
+}
+
 // base case for the QueryWrapper
 impl<'a> QueryWrapper<'a, (), ()> {
     fn new() -> QueryWrapper<'a, (), ()> {
+        let none: Option<()> = None;
         QueryWrapper {
             inner: (),
-            next: None as Option<()>,
+            next: none,
             _l: PhantomData,
         }
     }
@@ -376,11 +414,13 @@ impl<'a, T: Query + 'a, U: Query + 'a> IntoIterator for QueryBuilder<'a, T, U> {
     fn into_iter(self) -> Self::IntoIter {
         let queries = Rc::new(self.queries);
         let iter = build_iter(self.handle, queries);
-        let mut iter = Box::new(iter.flat_map(|node| node)) as BoxNodeIter;
+        let iter: BoxNodeIter = Box::new(iter.flat_map(|node| node));
         if let Some(limit) = self.limit {
-            iter = Box::new(iter.take(limit)) as BoxNodeIter;
+            let iter: BoxNodeIter = Box::new(iter.take(limit));
+            iter
+        } else {
+            iter
         }
-        iter
     }
 }
 
@@ -389,12 +429,10 @@ fn build_iter<'a, T: Query + 'a, U: Query + 'a>(
     queries: Rc<QueryWrapper<'a, T, U>>,
 ) -> BoxOptionNodeIter<'a> {
     let iter = NodeIterator::new(handle.clone(), queries.clone());
-    handle
-        .children
-        .borrow()
-        .iter()
-        .fold(Box::new(iter) as BoxOptionNodeIter, |acc, child| {
-            let child_iter = build_iter(child.clone(), queries.clone());
-            Box::new(acc.chain(Box::new(child_iter) as BoxOptionNodeIter)) as BoxOptionNodeIter
-        })
+    let iter: BoxOptionNodeIter = Box::new(iter);
+    handle.children.borrow().iter().fold(iter, |acc, child| {
+        let child_iter = build_iter(child.clone(), queries.clone());
+        let child_iter: BoxOptionNodeIter = Box::new(child_iter);
+        Box::new(acc.chain(child_iter))
+    })
 }

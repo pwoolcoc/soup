@@ -101,6 +101,17 @@
 //! assert_eq!(results, vec!["body".to_string(), "b".to_string()]);
 //! #   Ok(())
 //! # }
+#![deny(
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications
+)]
 extern crate html5ever;
 #[cfg(feature = "regex")]
 extern crate regex;
@@ -110,7 +121,10 @@ use html5ever::{
     rcdom::{Handle, RcDom},
     tendril::TendrilSink,
 };
-use std::io::{self, Read};
+use std::{
+    fmt,
+    io::{self, Read},
+};
 
 use crate::{
     find::{AttrQuery, QueryWrapper, TagQuery},
@@ -238,6 +252,12 @@ impl Soup {
     /// Extracts all text from the HTML
     pub fn text(&self) -> String {
         self.handle.text()
+    }
+}
+
+impl fmt::Debug for Soup {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.text())
     }
 }
 

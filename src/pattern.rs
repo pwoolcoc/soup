@@ -28,6 +28,7 @@ use regex::Regex;
 /// assert_eq!(result.get("id").unwrap(), "foo".to_string());
 /// ```
 pub trait Pattern: Clone {
+    /// Matches the `Pattern` with the value `haystack`
     fn matches(&self, haystack: &str) -> bool;
 }
 

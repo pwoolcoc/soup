@@ -8,7 +8,9 @@ use crate::{
 
 /// Adds some convenience methods to the `html5ever::rcdom::Node` type
 pub trait NodeExt: Sized {
+    /// Retrieves the node that these methods will work on
     fn get_node(&self) -> &rcdom::Node;
+    /// Retrieves the Handle that these methods will work on
     fn get_handle(self) -> Handle;
 
     /// Retrieves the name of the node
