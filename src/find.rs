@@ -1,14 +1,13 @@
 use html5ever::rcdom::{self, Handle, NodeData};
-use std::{fmt, marker::PhantomData};
+use std::{fmt, marker::PhantomData, rc::Rc};
 
 use crate::pattern::Pattern;
 
-pub trait Query: Clone {
+pub trait Query {
     fn matches(&self, node: &rcdom::Node) -> bool;
 }
 
-#[derive(Clone)]
-pub struct TagQuery<P: Clone> {
+pub struct TagQuery<P> {
     inner: P,
 }
 
@@ -31,8 +30,7 @@ impl<P: Pattern> Query for TagQuery<P> {
     }
 }
 
-#[derive(Clone)]
-pub struct AttrQuery<K: Clone, V: Clone> {
+pub struct AttrQuery<K, V> {
     key: K,
     value: V,
 }
@@ -80,7 +78,6 @@ impl Query for () {
     }
 }
 
-#[derive(Clone)]
 pub struct QueryWrapper<'a, T: Query, U: Query> {
     inner: T,
     next: Option<U>,
@@ -98,6 +95,9 @@ impl<'a> QueryWrapper<'a, (), ()> {
     }
 }
 
+// This is a constructor, it takes an existing QueryWrapper
+// and a new Query to add to the chain, and creates a new
+// QueryWrapper out of those two pieces
 impl<'a, T, U, V> QueryWrapper<'a, T, QueryWrapper<'a, U, V>>
 where
     T: Query + 'a,
@@ -147,7 +147,6 @@ where
 ///                 .find();            // executes the query, returns the first result
 /// #   Ok(())
 /// # }
-#[derive(Clone)]
 pub struct QueryBuilder<'a, T: Query + 'a = (), U: Query + 'a = ()> {
     handle: Handle,
     queries: QueryWrapper<'a, T, U>,
@@ -296,9 +295,9 @@ where
     /// #   Ok(())
     /// # }
     /// ```
-    pub fn find(&mut self) -> Option<Handle> {
+    pub fn find(mut self) -> Option<Handle> {
         self.limit = Some(1);
-        self.clone().into_iter().nth(0)
+        self.into_iter().nth(0)
     }
 
     /// Executes the query, and returns an iterator of the results
@@ -328,12 +327,12 @@ where
 
 struct NodeIterator<'a, T: Query + 'a, U: Query + 'a> {
     handle: Handle,
-    queries: QueryWrapper<'a, T, U>,
+    queries: Rc<QueryWrapper<'a, T, U>>,
     done: bool,
 }
 
 impl<'a, T: Query + 'a, U: Query + 'a> NodeIterator<'a, T, U> {
-    fn new(handle: Handle, queries: QueryWrapper<'a, T, U>) -> NodeIterator<'a, T, U> {
+    fn new(handle: Handle, queries: Rc<QueryWrapper<'a, T, U>>) -> NodeIterator<'a, T, U> {
         NodeIterator {
             handle,
             queries,
@@ -353,7 +352,7 @@ where
         if self.done {
             return None;
         }
-        if Query::matches(&self.queries, &self.handle) {
+        if Query::matches(&*self.queries, &self.handle) {
             self.done = true;
             Some(Some(self.handle.clone()))
         } else {
@@ -375,7 +374,8 @@ impl<'a, T: Query + 'a, U: Query + 'a> IntoIterator for QueryBuilder<'a, T, U> {
     type Item = Handle;
 
     fn into_iter(self) -> Self::IntoIter {
-        let iter = build_iter(self.handle.clone(), self.queries);
+        let queries = Rc::new(self.queries);
+        let iter = build_iter(self.handle, queries);
         let mut iter = Box::new(iter.flat_map(|node| node)) as BoxNodeIter;
         if let Some(limit) = self.limit {
             iter = Box::new(iter.take(limit)) as BoxNodeIter;
@@ -386,7 +386,7 @@ impl<'a, T: Query + 'a, U: Query + 'a> IntoIterator for QueryBuilder<'a, T, U> {
 
 fn build_iter<'a, T: Query + 'a, U: Query + 'a>(
     handle: Handle,
-    queries: QueryWrapper<'a, T, U>,
+    queries: Rc<QueryWrapper<'a, T, U>>,
 ) -> BoxOptionNodeIter<'a> {
     let iter = NodeIterator::new(handle.clone(), queries.clone());
     handle
