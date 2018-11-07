@@ -1,8 +1,5 @@
-use std::{
-    fmt,
-    marker::PhantomData,
-};
 use html5ever::rcdom::{self, Handle, NodeData};
+use std::{fmt, marker::PhantomData};
 
 use crate::pattern::Pattern;
 
@@ -12,22 +9,24 @@ pub trait Query: Clone {
 
 #[derive(Clone)]
 pub struct TagQuery<P: Clone> {
-    inner: P
+    inner: P,
 }
 
 impl<P: Pattern> TagQuery<P> {
     fn new(inner: P) -> TagQuery<P> {
-        TagQuery { inner }
+        TagQuery {
+            inner,
+        }
     }
 }
 
 impl<P: Pattern> Query for TagQuery<P> {
     fn matches(&self, node: &rcdom::Node) -> bool {
         match node.data {
-            NodeData::Element { ref name, .. } => {
-                self.inner.matches(name.local.as_ref())
-            },
-            _ => false
+            NodeData::Element {
+                ref name, ..
+            } => self.inner.matches(name.local.as_ref()),
+            _ => false,
         }
     }
 }
@@ -39,30 +38,38 @@ pub struct AttrQuery<K: Clone, V: Clone> {
 }
 
 impl<K, V> AttrQuery<K, V>
-    where K: Pattern,
-          V: Pattern,
+where
+    K: Pattern,
+    V: Pattern,
 {
     fn new(key: K, value: V) -> AttrQuery<K, V> {
-        AttrQuery { key, value }
+        AttrQuery {
+            key,
+            value,
+        }
     }
 }
 
 impl<K, V> Query for AttrQuery<K, V>
-    where K: Pattern,
-          V: Pattern,
+where
+    K: Pattern,
+    V: Pattern,
 {
     fn matches(&self, node: &rcdom::Node) -> bool {
         match node.data {
-            NodeData::Element { ref attrs, .. } => {
+            NodeData::Element {
+                ref attrs, ..
+            } => {
                 let attrs = attrs.borrow();
                 let mut iter = attrs.iter();
-                if let Some(ref attr) = iter.find(|attr| self.key.matches(attr.name.local.as_ref())) {
+                if let Some(ref attr) = iter.find(|attr| self.key.matches(attr.name.local.as_ref()))
+                {
                     self.value.matches(attr.value.as_ref())
                 } else {
                     false
                 }
             },
-            _ => false
+            _ => false,
         }
     }
 }
@@ -92,11 +99,15 @@ impl<'a> QueryWrapper<'a, (), ()> {
 }
 
 impl<'a, T, U, V> QueryWrapper<'a, T, QueryWrapper<'a, U, V>>
-    where T: Query + 'a,
-          U: Query + 'a,
-          V: Query + 'a,
+where
+    T: Query + 'a,
+    U: Query + 'a,
+    V: Query + 'a,
 {
-    fn wrap(inner: T, query: QueryWrapper<'a, U, V>) -> QueryWrapper<'a, T, QueryWrapper<'a, U, V>> {
+    fn wrap(
+        inner: T,
+        query: QueryWrapper<'a, U, V>,
+    ) -> QueryWrapper<'a, T, QueryWrapper<'a, U, V>> {
         QueryWrapper {
             inner,
             next: Some(query),
@@ -106,8 +117,9 @@ impl<'a, T, U, V> QueryWrapper<'a, T, QueryWrapper<'a, U, V>>
 }
 
 impl<'a, T, U> Query for QueryWrapper<'a, T, U>
-    where T: Query + 'a,
-          U: Query + 'a,
+where
+    T: Query + 'a,
+    U: Query + 'a,
 {
     fn matches(&self, node: &rcdom::Node) -> bool {
         let inner_match = self.inner.matches(node);
@@ -136,7 +148,7 @@ impl<'a, T, U> Query for QueryWrapper<'a, T, U>
 /// #   Ok(())
 /// # }
 #[derive(Clone)]
-pub struct QueryBuilder<'a, T: Query + 'a=(), U: Query + 'a=()> {
+pub struct QueryBuilder<'a, T: Query + 'a = (), U: Query + 'a = ()> {
     handle: Handle,
     queries: QueryWrapper<'a, T, U>,
     limit: Option<usize>,
@@ -159,12 +171,14 @@ impl<'a> QueryBuilder<'a, (), ()> {
 }
 
 impl<'a, T, U> QueryBuilder<'a, T, U>
-    where T: Query + 'a,
-          U: Query + 'a,
+where
+    T: Query + 'a,
+    U: Query + 'a,
 {
     /// Adds a limit to the number of results that can be returned
     ///
-    /// This method adds an upper bound to the number of results that will be returned by the query
+    /// This method adds an upper bound to the number of results that will be
+    /// returned by the query
     ///
     /// # Example
     ///
@@ -188,7 +202,7 @@ impl<'a, T, U> QueryBuilder<'a, T, U>
         let queries = QueryWrapper::<'a, Q, QueryWrapper<T, U>>::wrap(query, self.queries);
         QueryBuilder {
             handle: self.handle,
-            queries: queries,
+            queries,
             limit: self.limit,
         }
     }
@@ -202,7 +216,8 @@ impl<'a, T, U> QueryBuilder<'a, T, U>
     /// # use std::error::Error;
     /// # use soup::prelude::*;
     /// # fn main() -> Result<(), Box<Error>> {
-    /// let soup = Soup::new(r#"<div>Test</div><section><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
+    /// let soup =
+    ///     Soup::new(r#"<div>Test</div><section><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
     /// let result = soup.tag("b").find().unwrap();
     /// assert_eq!(result.get("id"), Some("bold-tag".to_string()));
     /// #   Ok(())
@@ -221,20 +236,26 @@ impl<'a, T, U> QueryBuilder<'a, T, U>
     /// # use std::error::Error;
     /// # use soup::prelude::*;
     /// # fn main() -> Result<(), Box<Error>> {
-    /// let soup = Soup::new(r#"<div>Test</div><section><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
+    /// let soup =
+    ///     Soup::new(r#"<div>Test</div><section><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
     /// let result = soup.attr("id", "bold-tag").find().unwrap();
     /// assert_eq!(result.name(), "b".to_string());
     /// #   Ok(())
     /// # }
     /// ```
-    pub fn attr<P, Q>(self, name: P, value: Q) -> QueryBuilder<'a, AttrQuery<P, Q>, QueryWrapper<'a, T, U>>
-            where P: Pattern,
-                  Q: Pattern,
+    pub fn attr<P, Q>(
+        self,
+        name: P,
+        value: Q,
+    ) -> QueryBuilder<'a, AttrQuery<P, Q>, QueryWrapper<'a, T, U>>
+    where
+        P: Pattern,
+        Q: Pattern,
     {
         self.push_query(AttrQuery::new(name, value))
     }
 
-    /// Specifies a class name for which to search 
+    /// Specifies a class name for which to search
     ///
     /// # Example
     ///
@@ -243,13 +264,18 @@ impl<'a, T, U> QueryBuilder<'a, T, U>
     /// # use std::error::Error;
     /// # use soup::prelude::*;
     /// # fn main() -> Result<(), Box<Error>> {
-    /// let soup = Soup::new(r#"<div>Test</div><section class="content"><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
+    /// let soup = Soup::new(
+    ///     r#"<div>Test</div><section class="content"><b id="bold-tag">SOME BOLD TEXT</b></section>"#,
+    /// );
     /// let result = soup.class("content").find().unwrap();
     /// assert_eq!(result.name(), "section".to_string());
     /// #   Ok(())
     /// # }
     /// ```
-    pub fn class<P: Pattern>(self, value: P) -> QueryBuilder<'a, AttrQuery<&'static str, P>, QueryWrapper<'a, T, U>> {
+    pub fn class<P: Pattern>(
+        self,
+        value: P,
+    ) -> QueryBuilder<'a, AttrQuery<&'static str, P>, QueryWrapper<'a, T, U>> {
         self.attr("class", value)
     }
 
@@ -262,7 +288,9 @@ impl<'a, T, U> QueryBuilder<'a, T, U>
     /// # use std::error::Error;
     /// # use soup::prelude::*;
     /// # fn main() -> Result<(), Box<Error>> {
-    /// let soup = Soup::new(r#"<ul><li id="one">One</li><li id="two">Two</li><li id="three">Three</li></ul>"#);
+    /// let soup = Soup::new(
+    ///     r#"<ul><li id="one">One</li><li id="two">Two</li><li id="three">Three</li></ul>"#,
+    /// );
     /// let result = soup.tag("li").find().unwrap();
     /// assert_eq!(result.get("id"), Some("one".to_string()));
     /// #   Ok(())
@@ -282,7 +310,9 @@ impl<'a, T, U> QueryBuilder<'a, T, U>
     /// # use std::error::Error;
     /// # use soup::prelude::*;
     /// # fn main() -> Result<(), Box<Error>> {
-    /// let soup = Soup::new(r#"<ul><li id="one">One</li><li id="two">Two</li><li id="three">Three</li></ul>"#);
+    /// let soup = Soup::new(
+    ///     r#"<ul><li id="one">One</li><li id="two">Two</li><li id="three">Three</li></ul>"#,
+    /// );
     /// let results = soup.tag("li").find_all().collect::<Vec<_>>();
     /// assert_eq!(results.len(), 3);
     /// assert_eq!(results[0].display(), "<li id=\"one\">One</li>");
@@ -295,7 +325,6 @@ impl<'a, T, U> QueryBuilder<'a, T, U>
         self.into_iter()
     }
 }
-
 
 struct NodeIterator<'a, T: Query + 'a, U: Query + 'a> {
     handle: Handle,
@@ -314,13 +343,16 @@ impl<'a, T: Query + 'a, U: Query + 'a> NodeIterator<'a, T, U> {
 }
 
 impl<'a, T, U> Iterator for NodeIterator<'a, T, U>
-    where T: Query + 'a,
-          U: Query + 'a,
+where
+    T: Query + 'a,
+    U: Query + 'a,
 {
     type Item = Option<Handle>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.done { return None; }
+        if self.done {
+            return None;
+        }
         if Query::matches(&self.queries, &self.handle) {
             self.done = true;
             Some(Some(self.handle.clone()))
@@ -335,13 +367,12 @@ impl<'a, T, U> Iterator for NodeIterator<'a, T, U>
     }
 }
 
-type BoxOptionNodeIter<'a> = Box<Iterator<Item=Option<Handle>> + 'a>;
-type BoxNodeIter<'a> = Box<Iterator<Item=Handle> + 'a>;
-
+type BoxOptionNodeIter<'a> = Box<Iterator<Item = Option<Handle>> + 'a>;
+type BoxNodeIter<'a> = Box<Iterator<Item = Handle> + 'a>;
 
 impl<'a, T: Query + 'a, U: Query + 'a> IntoIterator for QueryBuilder<'a, T, U> {
-    type Item = Handle;
     type IntoIter = BoxNodeIter<'a>;
+    type Item = Handle;
 
     fn into_iter(self) -> Self::IntoIter {
         let iter = build_iter(self.handle.clone(), self.queries);
@@ -353,11 +384,17 @@ impl<'a, T: Query + 'a, U: Query + 'a> IntoIterator for QueryBuilder<'a, T, U> {
     }
 }
 
-fn build_iter<'a, T: Query + 'a, U: Query + 'a>(handle: Handle, queries: QueryWrapper<'a, T, U>) -> BoxOptionNodeIter<'a> {
+fn build_iter<'a, T: Query + 'a, U: Query + 'a>(
+    handle: Handle,
+    queries: QueryWrapper<'a, T, U>,
+) -> BoxOptionNodeIter<'a> {
     let iter = NodeIterator::new(handle.clone(), queries.clone());
-    handle.children.borrow().iter().fold(Box::new(iter) as BoxOptionNodeIter, |acc, child| {
-        let child_iter = build_iter(child.clone(), queries.clone());
-        Box::new(acc.chain(Box::new(child_iter) as BoxOptionNodeIter)) as BoxOptionNodeIter
-    })
+    handle
+        .children
+        .borrow()
+        .iter()
+        .fold(Box::new(iter) as BoxOptionNodeIter, |acc, child| {
+            let child_iter = build_iter(child.clone(), queries.clone());
+            Box::new(acc.chain(Box::new(child_iter) as BoxOptionNodeIter)) as BoxOptionNodeIter
+        })
 }
-

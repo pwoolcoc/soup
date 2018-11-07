@@ -1,15 +1,8 @@
-use std::{
-    collections::BTreeMap,
-};
 use html5ever::rcdom::{self, Handle, NodeData};
+use std::collections::BTreeMap;
 
 use crate::{
-    find::{
-        QueryBuilder,
-        QueryWrapper,
-        TagQuery,
-        AttrQuery,
-    },
+    find::{AttrQuery, QueryBuilder, QueryWrapper, TagQuery},
     pattern::Pattern,
 };
 
@@ -20,8 +13,8 @@ pub trait NodeExt: Sized {
 
     /// Retrieves the name of the node
     ///
-    /// If this node is an element, the name of that element is returned. Otherwise, special names
-    /// are used:
+    /// If this node is an element, the name of that element is returned.
+    /// Otherwise, special names are used:
     ///
     /// * Document -> "\[document\]"
     /// * Doctype -> "\[doctype\]"
@@ -31,14 +24,24 @@ pub trait NodeExt: Sized {
     fn name(&self) -> &str {
         let node = self.get_node();
         match node.data {
-            NodeData::Document { .. } => "[document]",
-            NodeData::Doctype { .. } => "[doctype]",
-            NodeData::Text { .. } => "[text]",
-            NodeData::Comment { .. } => "[comment]",
-            NodeData::ProcessingInstruction { .. } => "[processing-instruction]",
-            NodeData::Element { ref name, .. } => {
-                name.local.as_ref()
-            }
+            NodeData::Document {
+                ..
+            } => "[document]",
+            NodeData::Doctype {
+                ..
+            } => "[doctype]",
+            NodeData::Text {
+                ..
+            } => "[text]",
+            NodeData::Comment {
+                ..
+            } => "[comment]",
+            NodeData::ProcessingInstruction {
+                ..
+            } => "[processing-instruction]",
+            NodeData::Element {
+                ref name, ..
+            } => name.local.as_ref(),
         }
     }
 
@@ -60,7 +63,9 @@ pub trait NodeExt: Sized {
     fn get(&self, attr: &str) -> Option<String> {
         let node = self.get_node();
         match node.data {
-            NodeData::Element { ref attrs, .. } => {
+            NodeData::Element {
+                ref attrs, ..
+            } => {
                 let attrs = attrs.borrow();
                 for it in attrs.iter() {
                     let name = it.name.local.as_ref();
@@ -78,13 +83,16 @@ pub trait NodeExt: Sized {
     fn attrs(&self) -> BTreeMap<String, String> {
         let node = self.get_node();
         match node.data {
-            NodeData::Element { ref attrs, .. } => {
+            NodeData::Element {
+                ref attrs, ..
+            } => {
                 let attrs = attrs.borrow();
-                attrs.iter()
+                attrs
+                    .iter()
                     .map(|attr| (attr.name.local.to_string(), attr.value.to_string()))
                     .collect()
             },
-            _ => BTreeMap::new()
+            _ => BTreeMap::new(),
         }
     }
 
@@ -106,16 +114,24 @@ pub trait NodeExt: Sized {
     }
 
     /// Starts building a Query, with tag `tag`
-    fn tag<'a, P: Pattern>(self, tag: P) -> QueryBuilder<'a, TagQuery<P>, QueryWrapper<'a, (), ()>> {
+    fn tag<'a, P: Pattern>(
+        self,
+        tag: P,
+    ) -> QueryBuilder<'a, TagQuery<P>, QueryWrapper<'a, (), ()>> {
         let handle = self.get_handle();
         let qb = QueryBuilder::new(handle);
         qb.tag(tag)
     }
 
     /// Starts building a Query, with attr `attr`
-    fn attr<'a, P, Q>(self, name: P, value: Q) -> QueryBuilder<'a, AttrQuery<P,Q>, QueryWrapper<'a, (), ()>>
-            where P: Pattern,
-                  Q: Pattern,
+    fn attr<'a, P, Q>(
+        self,
+        name: P,
+        value: Q,
+    ) -> QueryBuilder<'a, AttrQuery<P, Q>, QueryWrapper<'a, (), ()>>
+    where
+        P: Pattern,
+        Q: Pattern,
     {
         let handle = self.get_handle();
         let qb = QueryBuilder::new(handle);
@@ -123,7 +139,10 @@ pub trait NodeExt: Sized {
     }
 
     /// Starts building a Query, with class `class`
-    fn class<'a, P: Pattern>(self, value: P) -> QueryBuilder<'a, AttrQuery<&'static str, P>, QueryWrapper<'a, (), ()>> {
+    fn class<'a, P: Pattern>(
+        self,
+        value: P,
+    ) -> QueryBuilder<'a, AttrQuery<&'static str, P>, QueryWrapper<'a, (), ()>> {
         let handle = self.get_handle();
         let qb = QueryBuilder::new(handle);
         qb.class(value)
@@ -133,33 +152,53 @@ pub trait NodeExt: Sized {
     fn display(&self) -> String {
         let node = self.get_node();
         match node.data {
-            NodeData::Element { ref name, ref attrs, .. } => {
-                let c = node.children.borrow().iter().map(|child| child.display()).collect::<Vec<_>>().join("");
-                let mut a = attrs.borrow().iter().map(|attr| {
-                    format!(r#"{}="{}""#, attr.name.local, attr.value.as_ref())
-                }).collect::<Vec<_>>();
+            NodeData::Element {
+                ref name,
+                ref attrs,
+                ..
+            } => {
+                let c = node
+                    .children
+                    .borrow()
+                    .iter()
+                    .map(|child| child.display())
+                    .collect::<Vec<_>>()
+                    .join("");
+                let mut a = attrs
+                    .borrow()
+                    .iter()
+                    .map(|attr| format!(r#"{}="{}""#, attr.name.local, attr.value.as_ref()))
+                    .collect::<Vec<_>>();
                 a.sort();
                 let a = a.join(" ");
                 if a.is_empty() {
                     format!("<{}>{}</{}>", name.local.as_ref(), c, name.local.as_ref())
                 } else {
-                    format!("<{} {}>{}</{}>", name.local.as_ref(), a, c, name.local.as_ref())
+                    format!(
+                        "<{} {}>{}</{}>",
+                        name.local.as_ref(),
+                        a,
+                        c,
+                        name.local.as_ref()
+                    )
                 }
             },
-            NodeData::Text { ref contents, .. } => {
-                contents.borrow().as_ref().to_string()
-            },
-            NodeData::Comment { ref contents, .. } => {
-                format!("<!--{}-->", contents.as_ref())
-            },
-            _ => "".to_string()
+            NodeData::Text {
+                ref contents, ..
+            } => contents.borrow().as_ref().to_string(),
+            NodeData::Comment {
+                ref contents, ..
+            } => format!("<!--{}-->", contents.as_ref()),
+            _ => "".to_string(),
         }
     }
 }
 
 fn extract_text(node: &rcdom::Node, result: &mut Vec<String>) {
     match node.data {
-        NodeData::Text { ref contents, .. } => result.push(contents.borrow().to_string()),
+        NodeData::Text {
+            ref contents, ..
+        } => result.push(contents.borrow().to_string()),
         _ => (),
     }
     let children = node.children.borrow();
@@ -180,8 +219,8 @@ impl NodeExt for Handle {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
     use crate::prelude::*;
+    use std::collections::BTreeMap;
 
     #[test]
     fn name() {
@@ -218,9 +257,14 @@ mod tests {
 
         let soup = Soup::new(r#"<div class="foo bar" id="baz"><b>SOME TEXT</b></div>"#);
         let div = soup.tag("div").find().unwrap();
-        assert_eq!(div.display(), r#"<div class="foo bar" id="baz"><b>SOME TEXT</b></div>"#);
+        assert_eq!(
+            div.display(),
+            r#"<div class="foo bar" id="baz"><b>SOME TEXT</b></div>"#
+        );
 
-        let soup = Soup::new(r#"<div class="foo bar" id="baz"><b>SOME TEXT <!-- and a comment --></b></div>"#);
+        let soup = Soup::new(
+            r#"<div class="foo bar" id="baz"><b>SOME TEXT <!-- and a comment --></b></div>"#,
+        );
         let div = soup.tag("div").find().unwrap();
         let b = div.tag("b").find().unwrap();
         assert_eq!(b.display(), r#"<b>SOME TEXT <!-- and a comment --></b>"#);

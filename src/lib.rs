@@ -1,29 +1,29 @@
-//! Inspired by the Python library "BeautifulSoup," `soup` is a layer on top of `html5ever` that
-//! aims to provide a slightly different API for querying & manipulating HTML
+//! Inspired by the Python library "BeautifulSoup," `soup` is a layer on top of
+//! `html5ever` that aims to provide a slightly different API for querying &
+//! manipulating HTML
 //!
 //! # Examples (inspired by bs4's docs)
 //!
 //! ```
 //! # extern crate soup;
 //! # use soup::prelude::*;
-//! 
+//!
 //! const THREE_SISTERS: &'static str = r#"
-//!<html><head><title>The Dormouse's story</title></head>
-//!<body>
-//!<p class="title"><b>The Dormouse's story</b></p>
-//! 
-//!<p class="story">Once upon a time there were three little sisters; and their names were
-//!<a href="http://example.com/elsie" class="sister" id="link1">Elsie</a>,
-//!<a href="http://example.com/lacie" class="sister" id="link2">Lacie</a> and
-//!<a href="http://example.com/tillie" class="sister" id="link3">Tillie</a>;
-//!and they lived at the bottom of a well.</p>
-//! 
-//!<p class="story">...</p>
+//! <html><head><title>The Dormouse's story</title></head>
+//! <body>
+//! <p class="title"><b>The Dormouse's story</b></p>
+//!
+//! <p class="story">Once upon a time there were three little sisters; and their names were
+//! <a href="http://example.com/elsie" class="sister" id="link1">Elsie</a>,
+//! <a href="http://example.com/lacie" class="sister" id="link2">Lacie</a> and
+//! <a href="http://example.com/tillie" class="sister" id="link3">Tillie</a>;
+//! and they lived at the bottom of a well.</p>
+//!
+//! <p class="story">...</p>
 //! "#;
 //! # fn main() {
 //!
 //! let soup = Soup::new(THREE_SISTERS);
-//!
 //!
 //! let title = soup.tag("title").find().unwrap();
 //! assert_eq!(title.display(), "<title>The Dormouse's story</title>");
@@ -32,18 +32,26 @@
 //! # // assert_eq!(title.parent().name(), "head");
 //!
 //! let p = soup.tag("p").find().unwrap();
-//! assert_eq!(p.display(), r#"<p class="title"><b>The Dormouse's story</b></p>"#);
+//! assert_eq!(
+//!     p.display(),
+//!     r#"<p class="title"><b>The Dormouse's story</b></p>"#
+//! );
 //! assert_eq!(p.get("class"), Some("title".to_string()));
 //! let a = soup.tag("a").find().unwrap();
-//! assert_eq!(a.display(), r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>"#);
+//! assert_eq!(
+//!     a.display(),
+//!     r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>"#
+//! );
 //! let a_s = soup.tag("a").find_all().collect::<Vec<_>>();
 //! assert_eq!(
-//!     a_s.iter().map(|a| a.display()).collect::<Vec<_>>().join("\n"),
+//!     a_s.iter()
+//!         .map(|a| a.display())
+//!         .collect::<Vec<_>>()
+//!         .join("\n"),
 //!     r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>
-//!<a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>
-//!<a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>"#
+//! <a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>
+//! <a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>"#
 //! );
-//!
 //!
 //! let expected = [
 //!     "http://example.com/elsie",
@@ -55,22 +63,23 @@
 //!     let href = link.get("href").unwrap();
 //!     assert_eq!(href, expected[i].to_string());
 //! }
-//! 
 //!
 //! let text = soup.text();
-//! assert_eq!(text,
-//! r#"The Dormouse's story
-//! 
-//!The Dormouse's story
-//! 
-//!Once upon a time there were three little sisters; and their names were
-//!Elsie,
-//!Lacie and
-//!Tillie;
-//!and they lived at the bottom of a well.
+//! assert_eq!(
+//!     text,
+//!     r#"The Dormouse's story
 //!
-//!...
-//! "#);
+//! The Dormouse's story
+//!
+//! Once upon a time there were three little sisters; and their names were
+//! Elsie,
+//! Lacie and
+//! Tillie;
+//! and they lived at the bottom of a well.
+//!
+//! ...
+//! "#
+//! );
 //! # }
 //! ```
 //!
@@ -92,35 +101,29 @@
 //! assert_eq!(results, vec!["body".to_string(), "b".to_string()]);
 //! #   Ok(())
 //! # }
-//!
 extern crate html5ever;
 #[cfg(feature = "regex")]
 extern crate regex;
 
-use std::io::{self, Read};
 use html5ever::{
     parse_document,
-    rcdom::{
-        RcDom, Handle,
-    },
+    rcdom::{Handle, RcDom},
     tendril::TendrilSink,
 };
+use std::io::{self, Read};
 
-use crate::pattern::Pattern;
-use crate::find::{
-    QueryWrapper,
-    AttrQuery,
-    TagQuery,
+use crate::{
+    find::{AttrQuery, QueryWrapper, TagQuery},
+    pattern::Pattern,
 };
 
-/// This module exports all the important types & traits to use `soup` effectively
+/// This module exports all the important types & traits to use `soup`
+/// effectively
 pub mod prelude {
-    pub use crate::Soup;
-    pub use crate::node_ext::NodeExt;
+    pub use crate::{node_ext::NodeExt, Soup};
 }
 
-pub use crate::find::QueryBuilder;
-pub use crate::node_ext::NodeExt;
+pub use crate::{find::QueryBuilder, node_ext::NodeExt};
 
 mod find;
 mod node_ext;
@@ -187,8 +190,8 @@ impl Soup {
     /// ```
     pub fn from_reader<R: Read>(mut reader: R) -> io::Result<Soup> {
         let dom = parse_document(RcDom::default(), Default::default())
-                .from_utf8()
-                .read_from(&mut reader)?;
+            .from_utf8()
+            .read_from(&mut reader)?;
         Ok(Soup {
             handle: dom.document,
         })
@@ -201,22 +204,33 @@ impl Soup {
     }
 
     /// Starts building a Query, with tag `tag`
-    pub fn tag<'a, P: Pattern>(&self, tag: P) -> QueryBuilder<'a, TagQuery<P>, QueryWrapper<'a, (), ()>> {
+    pub fn tag<'a, P: Pattern>(
+        &self,
+        tag: P,
+    ) -> QueryBuilder<'a, TagQuery<P>, QueryWrapper<'a, (), ()>> {
         let qb = QueryBuilder::new(self.handle.clone());
         qb.tag(tag)
     }
 
     /// Starts building a Query, with attr `attr`
-    pub fn attr<'a, P, Q>(&self, name: P, value: Q) -> QueryBuilder<'a, AttrQuery<P, Q>, QueryWrapper<'a, (), ()>>
-            where P: Pattern,
-                  Q: Pattern,
+    pub fn attr<'a, P, Q>(
+        &self,
+        name: P,
+        value: Q,
+    ) -> QueryBuilder<'a, AttrQuery<P, Q>, QueryWrapper<'a, (), ()>>
+    where
+        P: Pattern,
+        Q: Pattern,
     {
         let qb = QueryBuilder::new(self.handle.clone());
         qb.attr(name, value)
     }
 
     /// Starts building a Query, with class `class`
-    pub fn class<'a, P: Pattern>(&self, value: P) -> QueryBuilder<'a, AttrQuery<&'static str, P>, QueryWrapper<'a, (), ()>> {
+    pub fn class<'a, P: Pattern>(
+        &self,
+        value: P,
+    ) -> QueryBuilder<'a, AttrQuery<&'static str, P>, QueryWrapper<'a, (), ()>> {
         let qb = QueryBuilder::new(self.handle.clone());
         qb.class(value)
     }
@@ -254,7 +268,8 @@ mod tests {
     #[test]
     fn find_all() {
         let soup = Soup::new(TEST_HTML_STRING);
-        let result = soup.tag("p")
+        let result = soup
+            .tag("p")
             .find_all()
             .map(|p| p.text())
             .collect::<Vec<_>>();

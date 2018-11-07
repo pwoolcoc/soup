@@ -5,15 +5,14 @@ use regex::Regex;
 
 /// A trait used to indicate a type which can be used to match a value
 ///
-/// Any type that implements this trait can be passed to the various QueryBuilder methods in order
-/// to match an element
+/// Any type that implements this trait can be passed to the various
+/// QueryBuilder methods in order to match an element
 ///
 /// # Example
 ///
 /// ```rust
 /// # extern crate soup;
-/// use soup::prelude::*;
-/// use soup::pattern::Pattern;
+/// use soup::{pattern::Pattern, prelude::*};
 ///
 /// #[derive(Clone)]
 /// struct MyType(String);
@@ -25,9 +24,7 @@ use regex::Regex;
 /// }
 ///
 /// let soup = Soup::new(r#"<div id="foo"></div>"#);
-/// let result = soup.tag(MyType("div".to_string()))
-///                  .find()
-///                  .unwrap();
+/// let result = soup.tag(MyType("div".to_string())).find().unwrap();
 /// assert_eq!(result.get("id").unwrap(), "foo".to_string());
 /// ```
 pub trait Pattern: Clone {
