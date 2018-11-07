@@ -23,7 +23,7 @@ impl<P> fmt::Debug for TagQuery<P>
 where
     P: Pattern + fmt::Debug,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TagQuery")
             .field("inner", &self.inner)
             .finish()
@@ -64,7 +64,7 @@ where
     K: Pattern + fmt::Debug,
     V: Pattern + fmt::Debug,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AttrQuery")
             .field("key", &self.key)
             .field("value", &self.value)
@@ -113,7 +113,7 @@ where
     T: Query + fmt::Debug,
     U: Query + fmt::Debug,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("QueryWrapper")
             .field("inner", &self.inner)
             .field("next", &self.next)
@@ -192,7 +192,7 @@ pub struct QueryBuilder<'a, T: Query + 'a = (), U: Query + 'a = ()> {
 }
 
 impl<'a, T: Query + 'a, U: Query + 'a> fmt::Debug for QueryBuilder<'a, T, U> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "QueryBuilder(«Handle», «Queries»)")
     }
 }
@@ -236,7 +236,7 @@ where
     }
 
     fn push_query<Q: Query + 'a>(self, query: Q) -> QueryBuilder<'a, Q, QueryWrapper<'a, T, U>> {
-        let queries = QueryWrapper::<'a, Q, QueryWrapper<T, U>>::wrap(query, self.queries);
+        let queries = QueryWrapper::<'a, Q, QueryWrapper<'a, T, U>>::wrap(query, self.queries);
         QueryBuilder {
             handle: self.handle,
             queries,
@@ -404,8 +404,8 @@ where
     }
 }
 
-type BoxOptionNodeIter<'a> = Box<Iterator<Item = Option<Handle>> + 'a>;
-type BoxNodeIter<'a> = Box<Iterator<Item = Handle> + 'a>;
+type BoxOptionNodeIter<'a> = Box<dyn Iterator<Item = Option<Handle>> + 'a>;
+type BoxNodeIter<'a> = Box<dyn Iterator<Item = Handle> + 'a>;
 
 impl<'a, T: Query + 'a, U: Query + 'a> IntoIterator for QueryBuilder<'a, T, U> {
     type IntoIter = BoxNodeIter<'a>;
@@ -414,9 +414,9 @@ impl<'a, T: Query + 'a, U: Query + 'a> IntoIterator for QueryBuilder<'a, T, U> {
     fn into_iter(self) -> Self::IntoIter {
         let queries = Rc::new(self.queries);
         let iter = build_iter(self.handle, queries);
-        let iter: BoxNodeIter = Box::new(iter.flat_map(|node| node));
+        let iter: BoxNodeIter<'_> = Box::new(iter.flat_map(|node| node));
         if let Some(limit) = self.limit {
-            let iter: BoxNodeIter = Box::new(iter.take(limit));
+            let iter: BoxNodeIter<'_> = Box::new(iter.take(limit));
             iter
         } else {
             iter
@@ -429,10 +429,10 @@ fn build_iter<'a, T: Query + 'a, U: Query + 'a>(
     queries: Rc<QueryWrapper<'a, T, U>>,
 ) -> BoxOptionNodeIter<'a> {
     let iter = NodeIterator::new(handle.clone(), queries.clone());
-    let iter: BoxOptionNodeIter = Box::new(iter);
+    let iter: BoxOptionNodeIter<'_> = Box::new(iter);
     handle.children.borrow().iter().fold(iter, |acc, child| {
         let child_iter = build_iter(child.clone(), queries.clone());
-        let child_iter: BoxOptionNodeIter = Box::new(child_iter);
+        let child_iter: BoxOptionNodeIter<'_> = Box::new(child_iter);
         Box::new(acc.chain(child_iter))
     })
 }

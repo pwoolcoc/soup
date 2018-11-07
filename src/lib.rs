@@ -110,7 +110,9 @@
     unsafe_code,
     unstable_features,
     unused_import_braces,
-    unused_qualifications
+    unused_qualifications,
+    rust_2018_compatibility,
+    rust_2018_idioms
 )]
 extern crate html5ever;
 #[cfg(feature = "regex")]
@@ -256,7 +258,7 @@ impl Soup {
 }
 
 impl fmt::Debug for Soup {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.text())
     }
 }
