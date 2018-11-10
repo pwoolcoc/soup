@@ -136,12 +136,13 @@ use crate::{
 /// This module exports all the important types & traits to use `soup`
 /// effectively
 pub mod prelude {
-    pub use crate::{node_ext::NodeExt, Soup};
+    pub use crate::{node_ext::NodeExt, handle_ext::HandleExt, Soup};
 }
 
-pub use crate::{find::QueryBuilder, node_ext::NodeExt};
+pub use crate::{find::QueryBuilder, node_ext::NodeExt, handle_ext::HandleExt};
 
 mod find;
+mod handle_ext;
 mod node_ext;
 pub mod pattern;
 
