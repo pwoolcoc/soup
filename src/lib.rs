@@ -101,6 +101,7 @@
 //! assert_eq!(results, vec!["body".to_string(), "b".to_string()]);
 //! #   Ok(())
 //! # }
+//! ```
 #![deny(
     missing_docs,
     missing_debug_implementations,
@@ -227,6 +228,15 @@ impl Soup {
     ) -> QueryBuilder<'a, TagQuery<P>, QueryWrapper<'a, (), ()>> {
         let qb = QueryBuilder::new(self.handle.clone());
         qb.tag(tag)
+    }
+
+    /// Starts building a Query, with attr name `name`
+    pub fn attr_name<'a, P>(&self, name: P) -> QueryBuilder<'a, AttrQuery<P, bool>, QueryWrapper<'a, (), ()>>
+    where
+        P: Pattern
+    {
+        let qb = QueryBuilder::new(self.handle.clone());
+        qb.attr_name(name)
     }
 
     /// Starts building a Query, with attr `attr`

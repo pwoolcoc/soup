@@ -32,6 +32,12 @@ pub trait Pattern: Clone {
     fn matches(&self, haystack: &str) -> bool;
 }
 
+impl Pattern for bool {
+    fn matches(&self, _haystack: &str) -> bool {
+        *self
+    }
+}
+
 impl<'a> Pattern for &'a str {
     fn matches(&self, haystack: &str) -> bool {
         *self == haystack

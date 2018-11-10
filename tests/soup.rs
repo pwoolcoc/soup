@@ -98,3 +98,18 @@ fn recursive() {
                     .count(),
                 0);
 }
+
+#[test]
+fn attr_with_name() {
+    let soup = soup();
+    let with_id = soup.attr_name("id").find_all();
+    assert_eq!(
+        with_id
+            .map(|a| a.display())
+            .collect::<Vec<_>>()
+            .join("\n"),
+        r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>
+<a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>
+<a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>"#
+    );
+}

@@ -121,9 +121,11 @@ where
     }
 }
 
+pub(crate) type EmptyQueryWrapper<'a> = QueryWrapper<'a, (), ()>;
+
 // base case for the QueryWrapper
-impl<'a> QueryWrapper<'a, (), ()> {
-    fn new() -> QueryWrapper<'a, (), ()> {
+impl<'a> EmptyQueryWrapper<'a> {
+    fn new() -> EmptyQueryWrapper<'a> {
         let none: Option<()> = None;
         QueryWrapper {
             inner: (),
@@ -265,6 +267,28 @@ where
     /// ```
     pub fn tag<P: Pattern>(self, tag: P) -> QueryBuilder<'a, TagQuery<P>, QueryWrapper<'a, T, U>> {
         self.push_query(TagQuery::new(tag))
+    }
+
+    /// Searches for a tag that has an attribute with the specified name
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// # use std::error::Error;
+    /// # use soup::prelude::*;
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let soup = Soup::new(r#"<div>Test</div><section><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
+    /// let result = soup.attr_name("id").find().unwrap();
+    /// assert_eq!(result.name(), "b");
+    /// #   Ok(())
+    /// # }
+    /// ```
+    pub fn attr_name<P>(self, name: P) -> QueryBuilder<'a, AttrQuery<P, bool>, QueryWrapper<'a, T, U>>
+    where
+        P: Pattern
+    {
+        self.push_query(AttrQuery::new(name, true))
     }
 
     /// Specifies an attribute name/value pair for which to search
