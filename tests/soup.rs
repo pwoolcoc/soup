@@ -88,3 +88,13 @@ fn find_with_regex() {
         assert_eq!(tag.name(), expected[i].to_string());
     }
 }
+
+#[test]
+fn recursive() {
+    let soup = soup();
+    assert_eq!(soup.tag("title")
+                    .recursive(false)
+                    .find_all()
+                    .count(),
+                0);
+}

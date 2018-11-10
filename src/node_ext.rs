@@ -11,7 +11,7 @@ pub trait NodeExt: Sized {
     /// Retrieves the node that these methods will work on
     fn get_node(&self) -> &rcdom::Node;
     /// Retrieves the Handle that these methods will work on
-    fn get_handle(self) -> Handle;
+    fn get_handle(&self) -> Handle;
 
     /// Retrieves the name of the node
     ///
@@ -109,7 +109,7 @@ pub trait NodeExt: Sized {
     // QueryBuilder constructor methods
 
     /// Starts building a Query, with limit `limit`
-    fn limit<'a>(self, limit: usize) -> QueryBuilder<'a, (), ()> {
+    fn limit<'a>(&self, limit: usize) -> QueryBuilder<'a, (), ()> {
         let handle = self.get_handle();
         let qb = QueryBuilder::new(handle);
         qb.limit(limit)
@@ -117,7 +117,7 @@ pub trait NodeExt: Sized {
 
     /// Starts building a Query, with tag `tag`
     fn tag<'a, P: Pattern>(
-        self,
+        &self,
         tag: P,
     ) -> QueryBuilder<'a, TagQuery<P>, QueryWrapper<'a, (), ()>> {
         let handle = self.get_handle();
@@ -127,7 +127,7 @@ pub trait NodeExt: Sized {
 
     /// Starts building a Query, with attr `attr`
     fn attr<'a, P, Q>(
-        self,
+        &self,
         name: P,
         value: Q,
     ) -> QueryBuilder<'a, AttrQuery<P, Q>, QueryWrapper<'a, (), ()>>
@@ -142,12 +142,19 @@ pub trait NodeExt: Sized {
 
     /// Starts building a Query, with class `class`
     fn class<'a, P: Pattern>(
-        self,
+        &self,
         value: P,
     ) -> QueryBuilder<'a, AttrQuery<&'static str, P>, QueryWrapper<'a, (), ()>> {
         let handle = self.get_handle();
         let qb = QueryBuilder::new(handle);
         qb.class(value)
+    }
+
+    /// Starts building a Query, with recursion set to `recursive`
+    fn recursive<'a>(&self, recursive: bool) -> QueryBuilder<'a, (), ()> {
+        let handle = self.get_handle();
+        let qb = QueryBuilder::new(handle);
+        qb.recursive(recursive)
     }
 
     /// Returns the node as an html tag
@@ -214,8 +221,8 @@ impl NodeExt for Handle {
         &*self
     }
 
-    fn get_handle(self) -> Handle {
-        self
+    fn get_handle(&self) -> Handle {
+        self.clone()
     }
 }
 

@@ -251,6 +251,12 @@ impl Soup {
         qb.class(value)
     }
 
+    /// Starts building a Query, with recursion set to `recursive`
+    pub fn recursive<'a>(&self, recursive: bool) -> QueryBuilder<'a, (), ()> {
+        let qb = QueryBuilder::new(self.handle.clone());
+        qb.recursive(recursive)
+    }
+
     /// Extracts all text from the HTML
     pub fn text(&self) -> String {
         self.handle.text()

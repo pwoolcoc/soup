@@ -189,6 +189,7 @@ pub struct QueryBuilder<'a, T: Query + 'a = (), U: Query + 'a = ()> {
     handle: Handle,
     queries: QueryWrapper<'a, T, U>,
     limit: Option<usize>,
+    recursive: bool,
 }
 
 impl<'a, T: Query + 'a, U: Query + 'a> fmt::Debug for QueryBuilder<'a, T, U> {
@@ -203,6 +204,7 @@ impl<'a> QueryBuilder<'a, (), ()> {
             handle,
             queries: QueryWrapper::new(),
             limit: None,
+            recursive: true,
         }
     }
 }
@@ -241,6 +243,7 @@ where
             handle: self.handle,
             queries,
             limit: self.limit,
+            recursive: self.recursive,
         }
     }
 
@@ -314,6 +317,13 @@ where
         value: P,
     ) -> QueryBuilder<'a, AttrQuery<&'static str, P>, QueryWrapper<'a, T, U>> {
         self.attr("class", value)
+    }
+
+    /// Specifies whether the query should recurse all the way through the document, or
+    /// stay localized to the queried tag and it's children
+    pub fn recursive(mut self, recursive: bool) -> Self {
+        self.recursive = recursive;
+        self
     }
 
     /// Executes the query, and returns either the first result, or `None`
@@ -413,7 +423,12 @@ impl<'a, T: Query + 'a, U: Query + 'a> IntoIterator for QueryBuilder<'a, T, U> {
 
     fn into_iter(self) -> Self::IntoIter {
         let queries = Rc::new(self.queries);
-        let iter = build_iter(self.handle, queries);
+        let recurse_levels = if self.recursive {
+            None
+        } else {
+            Some(1u8)
+        };
+        let iter = build_iter(self.handle, queries, recurse_levels);
         let iter: BoxNodeIter<'_> = Box::new(iter.flat_map(|node| node));
         if let Some(limit) = self.limit {
             let iter: BoxNodeIter<'_> = Box::new(iter.take(limit));
@@ -427,11 +442,17 @@ impl<'a, T: Query + 'a, U: Query + 'a> IntoIterator for QueryBuilder<'a, T, U> {
 fn build_iter<'a, T: Query + 'a, U: Query + 'a>(
     handle: Handle,
     queries: Rc<QueryWrapper<'a, T, U>>,
+    levels: Option<u8>,
 ) -> BoxOptionNodeIter<'a> {
     let iter = NodeIterator::new(handle.clone(), queries.clone());
     let iter: BoxOptionNodeIter<'_> = Box::new(iter);
+    if let Some(l) = levels {
+        if l == 0 {
+            return iter;
+        }
+    }
     handle.children.borrow().iter().fold(iter, |acc, child| {
-        let child_iter = build_iter(child.clone(), queries.clone());
+        let child_iter = build_iter(child.clone(), queries.clone(), levels.map(|l| l - 1));
         let child_iter: BoxOptionNodeIter<'_> = Box::new(child_iter);
         Box::new(acc.chain(child_iter))
     })
