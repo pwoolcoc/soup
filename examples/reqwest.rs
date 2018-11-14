@@ -18,6 +18,6 @@ fn main() -> Result<(), Box<Error>> {
                 .find()
                 .map(|span| span.text())
         });
-    assert_eq!(result, Some("Crate \nsoup".to_string()));
+    assert_eq!(result, Some("Crate soup".to_string()));
     Ok(())
 }
