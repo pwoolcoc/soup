@@ -4,10 +4,9 @@
 //!
 //! # Examples (inspired by bs4's docs)
 //!
-//! ```
-//! # extern crate soup;
-//! # use soup::prelude::*;
+//! Here is the HTML document we will be using for the rest of the examples:
 //!
+//! ```
 //! const THREE_SISTERS: &'static str = r#"
 //! <html><head><title>The Dormouse's story</title></head>
 //! <body>
@@ -21,8 +20,28 @@
 //!
 //! <p class="story">...</p>
 //! "#;
-//! # fn main() {
+//! fn main() {}
+//! ```
 //!
+//! First let's try searching for a tag with a specific name:
+//!
+//! ```
+//! # extern crate soup;
+//! # use soup::prelude::*;
+//! # const THREE_SISTERS: &'static str = r#"
+//! # <html><head><title>The Dormouse's story</title></head>
+//! # <body>
+//! # <p class="title"><b>The Dormouse's story</b></p>
+//! #
+//! # <p class="story">Once upon a time there were three little sisters; and their names were
+//! # <a href="http://example.com/elsie" class="sister" id="link1">Elsie</a>,
+//! # <a href="http://example.com/lacie" class="sister" id="link2">Lacie</a> and
+//! # <a href="http://example.com/tillie" class="sister" id="link3">Tillie</a>;
+//! # and they lived at the bottom of a well.</p>
+//! #
+//! # <p class="story">...</p>
+//! # "#;
+//! # fn main() {
 //! let soup = Soup::new(THREE_SISTERS);
 //!
 //! let title = soup.tag("title").find().unwrap();
@@ -37,11 +56,38 @@
 //!     r#"<p class="title"><b>The Dormouse's story</b></p>"#
 //! );
 //! assert_eq!(p.get("class"), Some("title".to_string()));
+//! # }
+//! ```
+//!
+//! So we see that `.find` will give us the first element that matches the query, and we've seen some
+//! of the methods that we can call on the results. But what if we want to retrieve more than one
+//! element with the query? For that, we'll use `.find_all`:
+//!
+//! ```
+//! # extern crate soup;
+//! # use soup::prelude::*;
+//! # const THREE_SISTERS: &'static str = r#"
+//! # <html><head><title>The Dormouse's story</title></head>
+//! # <body>
+//! # <p class="title"><b>The Dormouse's story</b></p>
+//! #
+//! # <p class="story">Once upon a time there were three little sisters; and their names were
+//! # <a href="http://example.com/elsie" class="sister" id="link1">Elsie</a>,
+//! # <a href="http://example.com/lacie" class="sister" id="link2">Lacie</a> and
+//! # <a href="http://example.com/tillie" class="sister" id="link3">Tillie</a>;
+//! # and they lived at the bottom of a well.</p>
+//! #
+//! # <p class="story">...</p>
+//! # "#;
+//! # fn main() {
+//! # let soup = Soup::new(THREE_SISTERS);
+//! // .find returns only the first 'a' tag
 //! let a = soup.tag("a").find().unwrap();
 //! assert_eq!(
 //!     a.display(),
 //!     r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>"#
 //! );
+//! // but .find_all will return _all_ of them:
 //! let a_s = soup.tag("a").find_all();
 //! assert_eq!(
 //!     a_s.map(|a| a.display())
@@ -51,7 +97,30 @@
 //! <a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>
 //! <a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>"#
 //! );
+//! # }
+//! ```
 //!
+//! Since `.find_all` returns an iterator, you can use it with all the methods you would
+//! use with other iterators:
+//!
+//! ```
+//! # extern crate soup;
+//! # use soup::prelude::*;
+//! # const THREE_SISTERS: &'static str = r#"
+//! # <html><head><title>The Dormouse's story</title></head>
+//! # <body>
+//! # <p class="title"><b>The Dormouse's story</b></p>
+//! #
+//! # <p class="story">Once upon a time there were three little sisters; and their names were
+//! # <a href="http://example.com/elsie" class="sister" id="link1">Elsie</a>,
+//! # <a href="http://example.com/lacie" class="sister" id="link2">Lacie</a> and
+//! # <a href="http://example.com/tillie" class="sister" id="link3">Tillie</a>;
+//! # and they lived at the bottom of a well.</p>
+//! #
+//! # <p class="story">...</p>
+//! # "#;
+//! # fn main() {
+//! # let soup = Soup::new(THREE_SISTERS);
 //! let expected = [
 //!     "http://example.com/elsie",
 //!     "http://example.com/lacie",
@@ -62,7 +131,31 @@
 //!     let href = link.get("href").unwrap();
 //!     assert_eq!(href, expected[i].to_string());
 //! }
+//! # }
+//! ```
 //!
+//! The top-level structure we've been working with here, `soup`, implements the same methods
+//! that the query results do, so you can call the same methods on it and it will delegate the
+//! calls to the root node:
+//!
+//! ```
+//! # extern crate soup;
+//! # use soup::prelude::*;
+//! # const THREE_SISTERS: &'static str = r#"
+//! # <html><head><title>The Dormouse's story</title></head>
+//! # <body>
+//! # <p class="title"><b>The Dormouse's story</b></p>
+//! #
+//! # <p class="story">Once upon a time there were three little sisters; and their names were
+//! # <a href="http://example.com/elsie" class="sister" id="link1">Elsie</a>,
+//! # <a href="http://example.com/lacie" class="sister" id="link2">Lacie</a> and
+//! # <a href="http://example.com/tillie" class="sister" id="link3">Tillie</a>;
+//! # and they lived at the bottom of a well.</p>
+//! #
+//! # <p class="story">...</p>
+//! # "#;
+//! # fn main() {
+//! # let soup = Soup::new(THREE_SISTERS);
 //! let text = soup.text();
 //! assert_eq!(
 //!     text,
@@ -82,7 +175,7 @@
 //! # }
 //! ```
 //!
-//! You can use more than just strings to search for results:
+//! You can use more than just strings to search for results, such as Regex:
 //!
 //! ```rust
 //! # extern crate regex;
@@ -101,6 +194,8 @@
 //! #   Ok(())
 //! # }
 //! ```
+//!
+//! Passing `true` will match everything:
 //!
 //! ```rust
 //! # extern crate soup;
@@ -123,6 +218,8 @@
 //! #   Ok(())
 //! # }
 //! ```
+//!
+//! (also, passing `false` will always return no results, though if that it useful to you, please let me know)
 #![deny(
     missing_docs,
     missing_debug_implementations,
