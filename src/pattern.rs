@@ -14,7 +14,6 @@ use regex::Regex;
 /// # extern crate soup;
 /// use soup::{pattern::Pattern, prelude::*};
 ///
-/// #[derive(Clone)]
 /// struct MyType(String);
 ///
 /// impl Pattern for MyType {
@@ -27,7 +26,7 @@ use regex::Regex;
 /// let result = soup.tag(MyType("div".to_string())).find().unwrap();
 /// assert_eq!(result.get("id").unwrap(), "foo".to_string());
 /// ```
-pub trait Pattern: Clone {
+pub trait Pattern {
     /// Matches the `Pattern` with the value `haystack`
     fn matches(&self, haystack: &str) -> bool;
 }
