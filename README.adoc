@@ -13,7 +13,7 @@ In order to use, add the following to your `Cargo.toml`:
 
 ----
 [dependencies]
-soup = "0.2"
+soup = "0.3"
 ----
 
 == Usage
@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<Error>> {
 			.attr("class", "hidden")
 			.find()
 			.and_then(|p| p.text());
-	OK(())
+    OK(())
 }
 
 ----
