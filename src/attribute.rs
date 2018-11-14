@@ -32,7 +32,7 @@ fn match_list_attr<V: Pattern>(needle: &V, haystack: &str) -> bool {
     false
 }
 
-pub(crate) fn list_aware_match<K: Pattern, V: Pattern>(node: &Node, attr_name: K, attr_value: V) -> bool {
+pub(crate) fn list_aware_match<K: Pattern, V: Pattern>(node: &Node, attr_name: &K, attr_value: &V) -> bool {
     match node.data {
         NodeData::Element { ref name, ref attrs, ..} => {
             let attrs = attrs.borrow();
@@ -41,7 +41,7 @@ pub(crate) fn list_aware_match<K: Pattern, V: Pattern>(node: &Node, attr_name: K
                 let v = attr.value.as_ref();
                 if attr_name.matches(k) {
                     if is_multiple(name.local.as_ref(), &k) {
-                        if match_list_attr(&attr_value, &v) {
+                        if match_list_attr(attr_value, &v) {
                             return true;
                         }
                     } else {
