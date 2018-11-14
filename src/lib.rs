@@ -142,6 +142,7 @@ pub mod prelude {
 
 pub use crate::{find::QueryBuilder, node_ext::NodeExt, handle_ext::HandleExt};
 
+mod attribute;
 mod find;
 mod handle_ext;
 mod node_ext;

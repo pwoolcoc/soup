@@ -2,6 +2,7 @@ use html5ever::rcdom::{self, Handle, NodeData};
 use std::{fmt, marker::PhantomData, rc::Rc};
 
 use crate::pattern::Pattern;
+use crate::attribute;
 
 pub trait Query {
     fn matches(&self, node: &rcdom::Node) -> bool;
@@ -78,21 +79,7 @@ where
     V: Pattern,
 {
     fn matches(&self, node: &rcdom::Node) -> bool {
-        match node.data {
-            NodeData::Element {
-                ref attrs, ..
-            } => {
-                let attrs = attrs.borrow();
-                let mut iter = attrs.iter();
-                if let Some(ref attr) = iter.find(|attr| self.key.matches(attr.name.local.as_ref()))
-                {
-                    self.value.matches(attr.value.as_ref())
-                } else {
-                    false
-                }
-            },
-            _ => false,
-        }
+        attribute::list_aware_match(&node, &self.key, &self.value)
     }
 }
 

@@ -113,3 +113,15 @@ fn attr_with_name() {
 <a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>"#
     );
 }
+
+#[test]
+fn multiple_value_attr() {
+    let soup = Soup::new(r#"<div id="baz quux"><p class="foo bar">SOME TEXT</p></div>"#);
+    let foo = soup.attr("class", "foo").find().unwrap();
+    assert_eq!(foo.display(), r#"<p class="foo bar">SOME TEXT</p>"#.to_string());
+    let bar = soup.attr("class", "bar").find().unwrap();
+    assert_eq!(bar.display(), r#"<p class="foo bar">SOME TEXT</p>"#.to_string());
+    // but a non-multiple-value attribute needs to match exactly
+    let baz = soup.attr("id", "baz").find();
+    assert!(baz.is_none());
+}
