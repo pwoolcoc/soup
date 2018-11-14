@@ -5,8 +5,8 @@ use crate::{
     pattern::Pattern,
 };
 
-/// Adds the QueryBuilder constructor methods to the `html5ever::rcdom::Node` type
-pub trait HandleExt {
+/// Adds the QueryBuilder constructor methods to the implementing type
+pub trait QueryBuilderExt {
     /// Retrieves the Handle that these methods will work on
     fn get_handle(&self) -> Handle;
 
@@ -82,7 +82,7 @@ pub trait HandleExt {
 
 }
 
-impl HandleExt for Handle {
+impl QueryBuilderExt for Handle {
     fn get_handle(&self) -> Handle {
         self.clone()
     }
