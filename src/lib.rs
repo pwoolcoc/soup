@@ -42,12 +42,11 @@
 //!     a.display(),
 //!     r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>"#
 //! );
-//! let a_s = soup.tag("a").find_all().collect::<Vec<_>>();
+//! let a_s = soup.tag("a").find_all();
 //! assert_eq!(
-//!     a_s.iter()
-//!         .map(|a| a.display())
-//!         .collect::<Vec<_>>()
-//!         .join("\n"),
+//!     a_s.map(|a| a.display())
+//!        .collect::<Vec<_>>()
+//!        .join("\n"),
 //!     r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>
 //! <a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>
 //! <a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>"#
@@ -99,6 +98,28 @@
 //!                   .map(|tag| tag.name().to_string())
 //!                   .collect::<Vec<_>>();
 //! assert_eq!(results, vec!["body".to_string(), "b".to_string()]);
+//! #   Ok(())
+//! # }
+//! ```
+//!
+//! ```rust
+//! # extern crate soup;
+//! # use soup::prelude::*;
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<Error>> {
+//!
+//! let soup = Soup::new(r#"<body><p>some text, <b>Some bold text</b></p></body>"#);
+//! let results = soup.tag(true)
+//!                   .find_all()
+//!                   .map(|tag| tag.name().to_string())
+//!                   .collect::<Vec<_>>();
+//! assert_eq!(results, vec![
+//!     "html".to_string(),
+//!     "head".to_string(),
+//!     "body".to_string(),
+//!     "p".to_string(),
+//!     "b".to_string(),
+//! ]);
 //! #   Ok(())
 //! # }
 //! ```
