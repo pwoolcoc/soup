@@ -129,11 +129,6 @@ use std::{
     io::{self, Read},
 };
 
-use crate::{
-    find::{AttrQuery, QueryWrapper, TagQuery},
-    pattern::Pattern,
-};
-
 /// This module exports all the important types & traits to use `soup`
 /// effectively
 pub mod prelude {
@@ -214,68 +209,6 @@ impl Soup {
         Ok(Soup {
             handle: dom.document,
         })
-    }
-
-    /// Starts building a Query, with limit `limit`
-    pub fn limit<'a>(&self, limit: usize) -> QueryBuilder<'a, (), ()> {
-        let qb = QueryBuilder::new(self.handle.clone());
-        qb.limit(limit)
-    }
-
-    /// Starts building a Query, with tag `tag`
-    pub fn tag<'a, P: Pattern>(
-        &self,
-        tag: P,
-    ) -> QueryBuilder<'a, TagQuery<P>, QueryWrapper<'a, (), ()>> {
-        let qb = QueryBuilder::new(self.handle.clone());
-        qb.tag(tag)
-    }
-
-    /// Starts building a Query, with attr name `name`
-    pub fn attr_name<'a, P>(&self, name: P) -> QueryBuilder<'a, AttrQuery<P, bool>, QueryWrapper<'a, (), ()>>
-    where
-        P: Pattern
-    {
-        let qb = QueryBuilder::new(self.handle.clone());
-        qb.attr_name(name)
-    }
-
-    /// Starts building a Query, with attr value `value`
-    pub fn attr_value<'a, P>(&self, value: P) -> QueryBuilder<'a, AttrQuery<bool, P>, QueryWrapper<'a, (), ()>>
-    where
-        P: Pattern
-    {
-        let qb = QueryBuilder::new(self.handle.clone());
-        qb.attr_value(value)
-    }
-
-    /// Starts building a Query, with attr `attr`
-    pub fn attr<'a, P, Q>(
-        &self,
-        name: P,
-        value: Q,
-    ) -> QueryBuilder<'a, AttrQuery<P, Q>, QueryWrapper<'a, (), ()>>
-    where
-        P: Pattern,
-        Q: Pattern,
-    {
-        let qb = QueryBuilder::new(self.handle.clone());
-        qb.attr(name, value)
-    }
-
-    /// Starts building a Query, with class `class`
-    pub fn class<'a, P: Pattern>(
-        &self,
-        value: P,
-    ) -> QueryBuilder<'a, AttrQuery<&'static str, P>, QueryWrapper<'a, (), ()>> {
-        let qb = QueryBuilder::new(self.handle.clone());
-        qb.class(value)
-    }
-
-    /// Starts building a Query, with recursion set to `recursive`
-    pub fn recursive<'a>(&self, recursive: bool) -> QueryBuilder<'a, (), ()> {
-        let qb = QueryBuilder::new(self.handle.clone());
-        qb.recursive(recursive)
     }
 
     /// Extracts all text from the HTML

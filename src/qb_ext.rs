@@ -1,6 +1,7 @@
 use html5ever::rcdom::Handle;
 
 use crate::{
+    Soup,
     find::{AttrQuery, QueryBuilder, QueryWrapper, TagQuery},
     pattern::Pattern,
 };
@@ -85,5 +86,11 @@ pub trait QueryBuilderExt {
 impl QueryBuilderExt for Handle {
     fn get_handle(&self) -> Handle {
         self.clone()
+    }
+}
+
+impl QueryBuilderExt for Soup {
+    fn get_handle(&self) -> Handle {
+        self.handle.clone()
     }
 }
