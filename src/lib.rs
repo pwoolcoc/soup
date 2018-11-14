@@ -240,6 +240,15 @@ impl Soup {
         qb.attr_name(name)
     }
 
+    /// Starts building a Query, with attr value `value`
+    pub fn attr_value<'a, P>(&self, value: P) -> QueryBuilder<'a, AttrQuery<bool, P>, QueryWrapper<'a, (), ()>>
+    where
+        P: Pattern
+    {
+        let qb = QueryBuilder::new(self.handle.clone());
+        qb.attr_value(value)
+    }
+
     /// Starts building a Query, with attr `attr`
     pub fn attr<'a, P, Q>(
         &self,

@@ -278,6 +278,28 @@ where
         self.push_query(AttrQuery::new(name, true))
     }
 
+    /// Search for a node with any attribute with a value that matches the specified value
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// # use std::error::Error;
+    /// # use soup::prelude::*;
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let soup = Soup::new(r#"<div>Test</div><section><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
+    /// let result = soup.attr_value("bold-tag").find().unwrap();
+    /// assert_eq!(result.name(), "b");
+    /// #   Ok(())
+    /// # }
+    /// ```
+    pub fn attr_value<P>(self, value: P) -> QueryBuilder<'a, AttrQuery<bool, P>, QueryWrapper<'a, T, U>>
+    where
+        P: Pattern
+    {
+        self.push_query(AttrQuery::new(true, value))
+    }
+
     /// Specifies an attribute name/value pair for which to search
     ///
     /// # Example

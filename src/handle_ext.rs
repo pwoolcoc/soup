@@ -38,6 +38,16 @@ pub trait HandleExt {
         qb.attr_name(name)
     }
 
+    /// Starts building a Query, with attr value `value`
+    fn attr_value<'a, P>(&self, value: P) -> QueryBuilder<'a, AttrQuery<bool, P>, QueryWrapper<'a, (), ()>>
+    where
+        P: Pattern
+    {
+        let handle = self.get_handle();
+        let qb = QueryBuilder::new(handle);
+        qb.attr_value(value)
+    }
+
     /// Starts building a Query, with attr `attr`
     fn attr<'a, P, Q>(
         &self,
