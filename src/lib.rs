@@ -20,7 +20,7 @@
 //!
 //! <p class="story">...</p>
 //! "#;
-//! fn main() {}
+//! # fn main() {}
 //! ```
 //!
 //! First let's try searching for a tag with a specific name:
