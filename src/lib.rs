@@ -335,6 +335,14 @@ impl Soup {
     }
 }
 
+impl From<RcDom> for Soup {
+    fn from(rc: RcDom) -> Soup {
+        Soup {
+            handle: rc.document
+        }
+    }
+}
+
 impl fmt::Debug for Soup {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.text())
