@@ -13,7 +13,7 @@ In order to use, add the following to your `Cargo.toml`:
 
 ----
 [dependencies]
-soup = "0.3"
+soup = "0.4"
 ----
 
 == Usage
