@@ -143,6 +143,15 @@ pub trait NodeExt: Sized {
             _ => "".to_string(),
         }
     }
+
+    /// Navigates to the parent of the node, if there is one
+    fn parent(&self) -> Option<Handle> {
+        let node = self.get_node();
+        let parent = node.parent.take(); // leaves node.parent as Cell(None)
+        let parent_node = parent.clone();
+        node.parent.set(parent); // puts original parent back?
+        parent_node.and_then(|node| node.upgrade())
+    }
 }
 
 fn extract_text(node: &rcdom::Node, result: &mut Vec<String>) {

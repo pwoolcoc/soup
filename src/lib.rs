@@ -48,7 +48,7 @@
 //! assert_eq!(title.display(), "<title>The Dormouse's story</title>");
 //! assert_eq!(title.name(), "title");
 //! assert_eq!(title.text(), "The Dormouse's story".to_string());
-//! # // assert_eq!(title.parent().name(), "head");
+//! assert_eq!(title.parent().unwrap().name(), "head");
 //!
 //! let p = soup.tag("p").find().unwrap();
 //! assert_eq!(

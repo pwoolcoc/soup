@@ -125,3 +125,22 @@ fn multiple_value_attr() {
     let baz = soup.attr("id", "baz").find();
     assert!(baz.is_none());
 }
+
+#[test]
+fn navigate_to_parent() {
+    let soup = Soup::new(r#"<div id="foo"><b>FOO</b></div>"#);
+    let b = soup.tag("b").find().unwrap();
+    let div = b.parent().unwrap();
+    assert_eq!(div.name(), "div".to_string());
+}
+
+#[test]
+fn navigate_to_top_of_tree() {
+    let soup = Soup::new(r#"<div id="foo"><b>FOO</b></div>"#);
+    let b = soup.tag("b").find().unwrap();
+    let div = b.parent().unwrap();
+    let body = div.parent().unwrap();
+    let html = body.parent().unwrap();
+    let document = html.parent().unwrap();
+    assert!(document.parent().is_none());
+}
