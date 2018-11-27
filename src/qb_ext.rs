@@ -1,3 +1,4 @@
+use std::fmt;
 use html5ever::rcdom::Handle;
 
 use crate::{
@@ -81,6 +82,53 @@ pub trait QueryBuilderExt {
         qb.recursive(recursive)
     }
 
+    /// Returns an iterator over the node's children
+    fn children(&self) -> NodeChildIter {
+        let handle = self.get_handle();
+        NodeChildIter::new(handle.clone())
+    }
+}
+
+/// Iterator over the children of a node
+pub struct NodeChildIter {
+    inner: Handle,
+    idx: usize,
+}
+
+impl NodeChildIter {
+    pub fn new(handle: Handle) -> NodeChildIter {
+        NodeChildIter {
+            inner: handle,
+            idx: 0,
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.inner.children.borrow().len()
+    }
+}
+
+impl Iterator for NodeChildIter {
+    type Item = Handle;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let item = self.inner.children.borrow().get(self.idx).cloned();
+        self.idx += 1;
+        item
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(self.len()))
+    }
+}
+
+impl fmt::Debug for NodeChildIter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("NodeChildIter")
+            .field("handle", &"<handle>")
+            .field("idx", &self.idx)
+            .finish()
+    }
 }
 
 impl QueryBuilderExt for Handle {

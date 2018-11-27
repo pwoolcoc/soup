@@ -144,3 +144,21 @@ fn navigate_to_top_of_tree() {
     let document = html.parent().unwrap();
     assert!(document.parent().is_none());
 }
+
+#[test]
+fn child_iterator() {
+    let soup = Soup::new(r#"
+    <ul>
+        <li>ONE</li>
+        <li>TWO</li>
+        <li>THREE</li>
+    </ul>
+    "#);
+    let ul = soup.tag("ul").find().expect("Couldn't get ul");
+    let children = ul.children()
+        .filter(|child| child.is_element())
+        .map(|child| child.text().to_string())
+        .collect::<Vec<_>>();
+    assert_eq!(children.len(), 3);
+    assert_eq!(children, vec!["ONE".to_string(), "TWO".to_string(), "THREE".to_string()]);
+}
