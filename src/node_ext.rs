@@ -145,6 +145,22 @@ pub trait NodeExt: Sized {
     }
 
     /// Navigates to the parent of the node, if there is one
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// extern crate soup;
+    ///
+    /// use soup::prelude::*;
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<Error>> {
+    /// let soup = Soup::new(r#"<div id=""><b>FOO</b></div>"#);
+    /// let b = soup.tag("b").find().unwrap();
+    /// let div = b.parent().unwrap();
+    /// assert_eq!(div.name(), "div".to_string());
+    /// #   Ok(())
+    /// # }
+    /// ```
     fn parent(&self) -> Option<Handle> {
         let node = self.get_node();
         let parent = node.parent.take(); // leaves node.parent as Cell(None)
