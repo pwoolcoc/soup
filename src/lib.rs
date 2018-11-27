@@ -219,6 +219,50 @@
 //! # }
 //! ```
 //!
+//! So what can you do once you get the result of a query? Well, for one thing, you can traverse the tree a few
+//! different ways. You can ascend the tree:
+//!
+//! ```rust
+//! # extern crate soup;
+//! # use soup::prelude::*;
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<Error>> {
+//!
+//! let soup = Soup::new(r#"<body><p>some text, <b>Some bold text</b></p></body>"#);
+//! let b = soup.tag("b")
+//!             .find()
+//!             .unwrap();
+//! let p = b.parent()
+//!          .unwrap();
+//! assert_eq!(p.name(), "p".to_string());
+//! let body = p.parent()
+//!             .unwrap();
+//! assert_eq!(body.name(), "body".to_string());
+//! #   Ok(())
+//! # }
+//! ```
+//!
+//! Or you can descend it:
+//!
+//! ```rust
+//! # extern crate soup;
+//! # use soup::prelude::*;
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<Error>> {
+//!
+//! let soup = Soup::new(r#"<body><ul><li>ONE</li><li>TWO</li><li>THREE</li></ul></body>"#);
+//! let ul = soup.tag("ul")
+//!             .find()
+//!             .unwrap();
+//! let mut li_tags = ul.children().filter(|child| child.is_element());
+//! assert_eq!(li_tags.next().map(|tag| tag.text().to_string()), Some("ONE".to_string()));
+//! assert_eq!(li_tags.next().map(|tag| tag.text().to_string()), Some("TWO".to_string()));
+//! assert_eq!(li_tags.next().map(|tag| tag.text().to_string()), Some("THREE".to_string()));
+//! assert!(li_tags.next().is_none());
+//! #   Ok(())
+//! # }
+//! ```
+//!
 //! (also, passing `false` will always return no results, though if that it useful to you, please let me know)
 #![deny(
     missing_docs,
