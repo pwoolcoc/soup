@@ -238,12 +238,14 @@ fn extract_text(node: &rcdom::Node, result: &mut Vec<String>) {
 }
 
 impl NodeExt for Handle {
+    #[inline(always)]
     fn get_node(&self) -> &rcdom::Node {
         &*self
     }
 }
 
 impl<'node> NodeExt for &'node rcdom::Node {
+    #[inline(always)]
     fn get_node(&self) -> &rcdom::Node {
         self
     }
