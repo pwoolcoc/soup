@@ -6,6 +6,60 @@ pub trait NodeExt: Sized {
     /// Retrieves the node that these methods will work on
     fn get_node(&self) -> &rcdom::Node;
 
+    /// Returns `true` if node is of type Document
+    fn is_document(&self) -> bool {
+        let node = self.get_node();
+        match node.data {
+            NodeData::Document { .. } => true,
+            _ => false,
+        }
+    }
+
+    /// Returns `true` if node is of type Doctype
+    fn is_doctype(&self) -> bool {
+        let node = self.get_node();
+        match node.data {
+            NodeData::Doctype { .. } => true,
+            _ => false,
+        }
+    }
+
+    /// Returns `true` if node is of type Text
+    fn is_text(&self) -> bool {
+        let node = self.get_node();
+        match node.data {
+            NodeData::Text { .. } => true,
+            _ => false,
+        }
+    }
+
+    /// Returns `true` if node is of type Comment
+    fn is_comment(&self) -> bool {
+        let node = self.get_node();
+        match node.data {
+            NodeData::Comment { .. } => true,
+            _ => false,
+        }
+    }
+
+    /// Returns `true` if node is of type ProcessingInstruction
+    fn is_processing_instruction(&self) -> bool {
+        let node = self.get_node();
+        match node.data {
+            NodeData::ProcessingInstruction { .. } => true,
+            _ => false,
+        }
+    }
+
+    /// Returns `true` if node is of type Element
+    fn is_element(&self) -> bool {
+        let node = self.get_node();
+        match node.data {
+            NodeData::Element { .. } => true,
+            _ => false,
+        }
+    }
+
     /// Retrieves the name of the node
     ///
     /// If this node is an element, the name of that element is returned.
