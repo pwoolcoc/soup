@@ -162,3 +162,26 @@ fn child_iterator() {
     assert_eq!(children.len(), 3);
     assert_eq!(children, vec!["ONE".to_string(), "TWO".to_string(), "THREE".to_string()]);
 }
+
+#[test]
+fn parent_iterator() {
+    let soup = Soup::new(r#"
+    <html>
+        <body>
+            <div>
+                <p>Some text <b>FOO</b></p>
+                <ul>
+                    <li><a href="foo"><i>FOO</i></a></li>
+                </ul>
+            </div>
+        </body>
+    </html>
+    "#);
+    let i = soup.tag("i")
+                .find()
+                .unwrap();
+    let parents = i.parents().map(|node| node.name().to_string()).collect::<Vec<_>>();
+    assert_eq!(parents, vec!["a".to_string(), "li".to_string(), "ul".to_string(),
+                             "div".to_string(), "body".to_string(), "html".to_string(),
+                             "[document]".to_string()]);
+}

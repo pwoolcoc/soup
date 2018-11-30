@@ -105,6 +105,60 @@ pub trait QueryBuilderExt {
         let handle = self.get_handle();
         NodeChildIter::new(handle.clone())
     }
+
+    /// Iterator over the parents of a node
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// use soup::prelude::*;
+    ///
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// let soup = Soup::new(r#"<div><p><b>FOO</b></p></div>"#);
+    /// let b = soup.tag("b").find().unwrap();
+    /// let parents = b.parents().map(|node| node.name().to_string()).collect::<Vec<_>>();
+    /// assert_eq!(parents, vec!["p".to_string(), "div".to_string(), "body".to_string(), "html".to_string(), "[document]".to_string()]);
+    /// #   Ok(())
+    /// # }
+    /// ```
+    fn parents(&self) -> NodeParentIter {
+        NodeParentIter::new(self.get_handle().clone())
+    }
+}
+
+/// Iterator over the parents of a node
+pub struct NodeParentIter {
+    inner: Handle,
+}
+
+impl fmt::Debug for NodeParentIter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use crate::node_ext::NodeExt;
+        f.debug_struct("NodeParentIter")
+            .field("inner", &format!("{}", self.inner.display()))
+            .finish()
+    }
+}
+
+impl NodeParentIter {
+    pub fn new(handle: Handle) -> NodeParentIter {
+        NodeParentIter { inner: handle }
+    }
+}
+
+impl Iterator for NodeParentIter {
+    type Item = Handle;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        use crate::node_ext::NodeExt;
+        if let Some(ref parent) = self.inner.parent() {
+            self.inner = parent.clone();
+            Some(parent.clone())
+        } else {
+            None
+        }
+    }
 }
 
 /// Iterator over the children of a node
