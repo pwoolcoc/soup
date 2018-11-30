@@ -83,6 +83,24 @@ pub trait QueryBuilderExt {
     }
 
     /// Returns an iterator over the node's children
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate soup;
+    /// use soup::prelude::*;
+    ///
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// let soup = Soup::new(r#"<ul><li>ONE</li><li>TWO</li><li>THREE</li></ul>"#);
+    /// let ul = soup.tag("ul").find().unwrap();
+    /// let li_text = ul.children()
+    ///                 .filter(|node| node.is_element())
+    ///                 .map(|node| node.text().to_string())
+    ///                 .collect::<Vec<_>>();
+    /// assert_eq!(li_text, vec!["ONE".to_string(), "TWO".to_string(), "THREE".to_string()]);
+    /// #   Ok(())
+    /// # }
+    /// ```
     fn children(&self) -> NodeChildIter {
         let handle = self.get_handle();
         NodeChildIter::new(handle.clone())
