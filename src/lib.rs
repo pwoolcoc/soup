@@ -197,6 +197,8 @@
 //!
 //! Passing `true` will match everything:
 //!
+//! (also, passing `false` will always return no results, though if that it useful to you, please let me know)
+//!
 //! ```rust
 //! # extern crate soup;
 //! # use soup::prelude::*;
@@ -263,7 +265,24 @@
 //! # }
 //! ```
 //!
-//! (also, passing `false` will always return no results, though if that it useful to you, please let me know)
+//! Or ascend it:
+//!
+//! ```rust
+//! # extern crate soup;
+//! # use soup::prelude::*;
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<Error>> {
+//!
+//! let soup = Soup::new(r#"<body><ul><li>ONE</li><li>TWO</li><li>THREE</li></ul></body>"#);
+//! let li = soup.tag("li").find().unwrap();
+//! let mut parents = li.parents();
+//! assert_eq!(parents.next().map(|tag| tag.name().to_string()), Some("ul".to_string()));
+//! assert_eq!(parents.next().map(|tag| tag.name().to_string()), Some("body".to_string()));
+//! assert_eq!(parents.next().map(|tag| tag.name().to_string()), Some("html".to_string()));
+//! assert_eq!(parents.next().map(|tag| tag.name().to_string()), Some("[document]".to_string()));
+//! #   Ok(())
+//! # }
+//! ```
 #![deny(
     missing_docs,
     missing_debug_implementations,
