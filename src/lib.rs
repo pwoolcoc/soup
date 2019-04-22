@@ -218,6 +218,7 @@
 //! #   Ok(())
 //! # }
 //! ```
+//! (also, passing `false` will always return no results, though if that it useful to you, please let me know)
 //!
 //! So what can you do once you get the result of a query? Well, for one thing, you can traverse the tree a few
 //! different ways. You can ascend the tree:
@@ -262,8 +263,6 @@
 //! #   Ok(())
 //! # }
 //! ```
-//!
-//! (also, passing `false` will always return no results, though if that it useful to you, please let me know)
 #![deny(
     missing_docs,
     missing_debug_implementations,
