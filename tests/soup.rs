@@ -16,18 +16,18 @@ fn soup() -> Soup {
 #[test]
 fn simple_nav() {
     let soup = soup();
-    let title = soup.tag("title").find().unwrap();
+    let title = soup.tag("title").find().expect("Couldn't find tag 'title'");
     assert_eq!(title.display(), "<title>The Dormouse's story</title>");
     assert_eq!(title.name(), "title");
     assert_eq!(title.text(), "The Dormouse's story".to_string());
     // assert_eq!(title.parent().name(), "head");
-    let p = soup.tag("p").find().unwrap();
+    let p = soup.tag("p").find().expect("couldn't find tag 'p'");
     assert_eq!(
         p.display(),
         r#"<p class="title"><b>The Dormouse's story</b></p>"#
     );
     assert_eq!(p.get("class"), Some("title".to_string()));
-    let a = soup.tag("a").find().unwrap();
+    let a = soup.tag("a").find().expect("Couldn't find tag 'a'");
     assert_eq!(
         a.display(),
         r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>"#
@@ -53,7 +53,7 @@ fn extract_all_links() {
         "http://example.com/tillie",
     ];
     for (i, link) in soup.tag("a").find_all().enumerate() {
-        let href = link.get("href").unwrap();
+        let href = link.get("href").expect("couldn't find link with an href");
         assert_eq!(href, expected[i].to_string());
     }
 }
@@ -84,7 +84,7 @@ and they lived at the bottom of a well.
 fn find_with_regex() {
     let soup = soup();
     let expected = ["body", "b"];
-    for (i, tag) in soup.tag(Regex::new("^b").unwrap()).find_all().enumerate() {
+    for (i, tag) in soup.tag(Regex::new("^b").expect("Couldnt create regex '%^b'")).find_all().enumerate() {
         assert_eq!(tag.name(), expected[i].to_string());
     }
 }
@@ -117,9 +117,9 @@ fn attr_with_name() {
 #[test]
 fn multiple_value_attr() {
     let soup = Soup::new(r#"<div id="baz quux"><p class="foo bar">SOME TEXT</p></div>"#);
-    let foo = soup.attr("class", "foo").find().unwrap();
+    let foo = soup.attr("class", "foo").find().expect("Couldn't find tag with class 'foo'");
     assert_eq!(foo.display(), r#"<p class="foo bar">SOME TEXT</p>"#.to_string());
-    let bar = soup.attr("class", "bar").find().unwrap();
+    let bar = soup.attr("class", "bar").find().expect("Couldn't find tag with class 'bar'");
     assert_eq!(bar.display(), r#"<p class="foo bar">SOME TEXT</p>"#.to_string());
     // but a non-multiple-value attribute needs to match exactly
     let baz = soup.attr("id", "baz").find();
@@ -129,19 +129,19 @@ fn multiple_value_attr() {
 #[test]
 fn navigate_to_parent() {
     let soup = Soup::new(r#"<div id="foo"><b>FOO</b></div>"#);
-    let b = soup.tag("b").find().unwrap();
-    let div = b.parent().unwrap();
+    let b = soup.tag("b").find().expect("couldn't find tag 'b'");
+    let div = b.parent().expect("Couldn't find parent of 'b'");
     assert_eq!(div.name(), "div".to_string());
 }
 
 #[test]
 fn navigate_to_top_of_tree() {
     let soup = Soup::new(r#"<div id="foo"><b>FOO</b></div>"#);
-    let b = soup.tag("b").find().unwrap();
-    let div = b.parent().unwrap();
-    let body = div.parent().unwrap();
-    let html = body.parent().unwrap();
-    let document = html.parent().unwrap();
+    let b = soup.tag("b").find().expect("Couldn't find tag 'b'");
+    let div = b.parent().expect("Couldn't find parent of tag 'b'");
+    let body = div.parent().expect("Couldn't find parent of 'div'");
+    let html = body.parent().expect("Couldn't find parent of 'body'");
+    let document = html.parent().expect("Couldn't find parent of 'html'");
     assert!(document.parent().is_none());
 }
 
@@ -179,7 +179,7 @@ fn parent_iterator() {
     "#);
     let i = soup.tag("i")
                 .find()
-                .unwrap();
+                .expect("Couldn't find tag 'i'");
     let parents = i.parents().map(|node| node.name().to_string()).collect::<Vec<_>>();
     assert_eq!(parents, vec!["a".to_string(), "li".to_string(), "ul".to_string(),
                              "div".to_string(), "body".to_string(), "html".to_string(),

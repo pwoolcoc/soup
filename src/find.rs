@@ -247,7 +247,7 @@ where
     /// # fn main() -> Result<(), Box<Error>> {
     /// let soup =
     ///     Soup::new(r#"<div>Test</div><section><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
-    /// let result = soup.tag("b").find().unwrap();
+    /// let result = soup.tag("b").find().expect("Couldn't find tag 'b'");
     /// assert_eq!(result.get("id"), Some("bold-tag".to_string()));
     /// #   Ok(())
     /// # }
@@ -266,7 +266,7 @@ where
     /// # use soup::prelude::*;
     /// # fn main() -> Result<(), Box<Error>> {
     /// let soup = Soup::new(r#"<div>Test</div><section><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
-    /// let result = soup.attr_name("id").find().unwrap();
+    /// let result = soup.attr_name("id").find().expect("Couldn't find element with an 'id'");
     /// assert_eq!(result.name(), "b");
     /// #   Ok(())
     /// # }
@@ -288,7 +288,7 @@ where
     /// # use soup::prelude::*;
     /// # fn main() -> Result<(), Box<Error>> {
     /// let soup = Soup::new(r#"<div>Test</div><section><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
-    /// let result = soup.attr_value("bold-tag").find().unwrap();
+    /// let result = soup.attr_value("bold-tag").find().expect("Couldn't find a tag with attribute value 'bold-tag'");
     /// assert_eq!(result.name(), "b");
     /// #   Ok(())
     /// # }
@@ -311,7 +311,7 @@ where
     /// # fn main() -> Result<(), Box<Error>> {
     /// let soup =
     ///     Soup::new(r#"<div>Test</div><section><b id="bold-tag">SOME BOLD TEXT</b></section>"#);
-    /// let result = soup.attr("id", "bold-tag").find().unwrap();
+    /// let result = soup.attr("id", "bold-tag").find().expect("Couldn't find tag with id 'bold-tag'");
     /// assert_eq!(result.name(), "b".to_string());
     /// #   Ok(())
     /// # }
@@ -340,7 +340,7 @@ where
     /// let soup = Soup::new(
     ///     r#"<div>Test</div><section class="content"><b id="bold-tag">SOME BOLD TEXT</b></section>"#,
     /// );
-    /// let result = soup.class("content").find().unwrap();
+    /// let result = soup.class("content").find().expect("Couldn't find tag with class 'content'");
     /// assert_eq!(result.name(), "section".to_string());
     /// #   Ok(())
     /// # }
@@ -371,7 +371,7 @@ where
     /// let soup = Soup::new(
     ///     r#"<ul><li id="one">One</li><li id="two">Two</li><li id="three">Three</li></ul>"#,
     /// );
-    /// let result = soup.tag("li").find().unwrap();
+    /// let result = soup.tag("li").find().expect("Couldn't find 'li'");
     /// assert_eq!(result.get("id"), Some("one".to_string()));
     /// #   Ok(())
     /// # }

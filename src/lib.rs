@@ -44,13 +44,13 @@
 //! # fn main() {
 //! let soup = Soup::new(THREE_SISTERS);
 //!
-//! let title = soup.tag("title").find().unwrap();
+//! let title = soup.tag("title").find().expect("Couldn't find tag 'title'");
 //! assert_eq!(title.display(), "<title>The Dormouse's story</title>");
 //! assert_eq!(title.name(), "title");
 //! assert_eq!(title.text(), "The Dormouse's story".to_string());
-//! assert_eq!(title.parent().unwrap().name(), "head");
+//! assert_eq!(title.parent().expect("Couldn't find parent of 'title'").name(), "head");
 //!
-//! let p = soup.tag("p").find().unwrap();
+//! let p = soup.tag("p").find().expect("Couldn't find tag 'p'");
 //! assert_eq!(
 //!     p.display(),
 //!     r#"<p class="title"><b>The Dormouse's story</b></p>"#
@@ -82,7 +82,7 @@
 //! # fn main() {
 //! # let soup = Soup::new(THREE_SISTERS);
 //! // .find returns only the first 'a' tag
-//! let a = soup.tag("a").find().unwrap();
+//! let a = soup.tag("a").find().expect("Couldn't find tag 'a'");
 //! assert_eq!(
 //!     a.display(),
 //!     r#"<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>"#
@@ -128,7 +128,7 @@
 //! ];
 //!
 //! for (i, link) in soup.tag("a").find_all().enumerate() {
-//!     let href = link.get("href").unwrap();
+//!     let href = link.get("href").expect("Couldn't find link with 'href' attribute");
 //!     assert_eq!(href, expected[i].to_string());
 //! }
 //! # }
@@ -234,12 +234,12 @@
 //! let soup = Soup::new(r#"<body><p>some text, <b>Some bold text</b></p></body>"#);
 //! let b = soup.tag("b")
 //!             .find()
-//!             .unwrap();
+//!             .expect("Couldn't find tag 'b'");
 //! let p = b.parent()
-//!          .unwrap();
+//!          .expect("Couldn't find parent of 'b'");
 //! assert_eq!(p.name(), "p".to_string());
 //! let body = p.parent()
-//!             .unwrap();
+//!             .expect("Couldn't find parent of 'p'");
 //! assert_eq!(body.name(), "body".to_string());
 //! #   Ok(())
 //! # }
@@ -256,7 +256,7 @@
 //! let soup = Soup::new(r#"<body><ul><li>ONE</li><li>TWO</li><li>THREE</li></ul></body>"#);
 //! let ul = soup.tag("ul")
 //!             .find()
-//!             .unwrap();
+//!             .expect("Couldn't find tag 'ul'");
 //! let mut li_tags = ul.children().filter(|child| child.is_element());
 //! assert_eq!(li_tags.next().map(|tag| tag.text().to_string()), Some("ONE".to_string()));
 //! assert_eq!(li_tags.next().map(|tag| tag.text().to_string()), Some("TWO".to_string()));
@@ -275,7 +275,7 @@
 //! # fn main() -> Result<(), Box<Error>> {
 //!
 //! let soup = Soup::new(r#"<body><ul><li>ONE</li><li>TWO</li><li>THREE</li></ul></body>"#);
-//! let li = soup.tag("li").find().unwrap();
+//! let li = soup.tag("li").find().expect("Couldn't find tag 'li'");
 //! let mut parents = li.parents();
 //! assert_eq!(parents.next().map(|tag| tag.name().to_string()), Some("ul".to_string()));
 //! assert_eq!(parents.next().map(|tag| tag.name().to_string()), Some("body".to_string()));
@@ -303,7 +303,7 @@ extern crate regex;
 
 use html5ever::{
     parse_document,
-    rcdom::{Handle, RcDom},
+    rcdom::RcDom,
     tendril::TendrilSink,
 };
 use std::{
@@ -326,9 +326,8 @@ mod node_ext;
 pub mod pattern;
 
 /// Parses HTML & provides methods to query & manipulate the document
-#[derive(Clone)]
 pub struct Soup {
-    handle: Handle,
+    handle: RcDom,
 }
 
 impl Soup {
@@ -364,7 +363,7 @@ impl Soup {
             .from_utf8()
             .one(html.as_bytes());
         Soup {
-            handle: dom.document,
+            handle: dom,
         }
     }
 
@@ -389,27 +388,27 @@ impl Soup {
             .from_utf8()
             .read_from(&mut reader)?;
         Ok(Soup {
-            handle: dom.document,
+            handle: dom,
         })
     }
 
     /// Extracts all text from the HTML
     pub fn text(&self) -> String {
-        self.handle.text()
+        self.handle.document.text()
     }
 }
 
 impl From<RcDom> for Soup {
     fn from(rc: RcDom) -> Soup {
         Soup {
-            handle: rc.document
+            handle: rc
         }
     }
 }
 
 impl fmt::Debug for Soup {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.text())
+        write!(f, "{}", self.handle.document.text())
     }
 }
 
@@ -433,7 +432,7 @@ mod tests {
     #[test]
     fn find() {
         let soup = Soup::new(TEST_HTML_STRING);
-        let result = soup.tag("p").find().unwrap();
+        let result = soup.tag("p").find().expect("Couldn't find tag 'p'");
         assert_eq!(result.text(), "One".to_string());
     }
 
