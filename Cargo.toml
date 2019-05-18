@@ -10,7 +10,7 @@ documentation = "https://docs.rs/soup"
 repository = "https://gitlab.com/pwoolcoc/soup.git"
 
 [dependencies]
-html5ever = "=0.22.3"
+html5ever = "0.22"
 regex = { version = "1.0.5", optional = true }
 
 [dev-dependencies]

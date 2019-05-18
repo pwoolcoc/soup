@@ -104,7 +104,7 @@ pub trait NodeExt: Sized {
     /// # use soup::prelude::*;
     /// # fn main() -> Result<(), Box<Error>> {
     /// let soup = Soup::new(r#"<div class="foo bar"></div>"#);
-    /// let div = soup.tag("div").find().unwrap();
+    /// let div = soup.tag("div").find().expect("Couldn't find div");
     /// assert_eq!(div.get("class"), Some("foo bar".to_string()));
     /// #   Ok(())
     /// # }
@@ -209,8 +209,8 @@ pub trait NodeExt: Sized {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<Error>> {
     /// let soup = Soup::new(r#"<div id=""><b>FOO</b></div>"#);
-    /// let b = soup.tag("b").find().unwrap();
-    /// let div = b.parent().unwrap();
+    /// let b = soup.tag("b").find().expect("Couldn't find tag 'b'");
+    /// let div = b.parent().expect("Couldn't get parent of tag 'b'");
     /// assert_eq!(div.name(), "div".to_string());
     /// #   Ok(())
     /// # }
@@ -259,7 +259,7 @@ mod tests {
     #[test]
     fn name() {
         let soup = Soup::new("<b>some text</b>");
-        let b = soup.tag("b").find().unwrap();
+        let b = soup.tag("b").find().expect("Couldn't find tag 'b'");
         let name = b.name();
         assert_eq!(name, "b");
     }
@@ -267,7 +267,7 @@ mod tests {
     #[test]
     fn get() {
         let soup = Soup::new(r#"<div class="one two"></div>"#);
-        let div = soup.tag("div").find().unwrap();
+        let div = soup.tag("div").find().expect("Couldn't find tag 'div'");
         let class = div.get("class");
         assert_eq!(class, Some("one two".to_string()));
     }
@@ -275,7 +275,7 @@ mod tests {
     #[test]
     fn attrs() {
         let soup = Soup::new(r#"<div class="one two" id="some-id"></div>"#);
-        let div = soup.tag("div").find().unwrap();
+        let div = soup.tag("div").find().expect("Couldn't find tag 'div'");
         let attrs = div.attrs();
         let mut expected = BTreeMap::new();
         expected.insert("class".to_string(), "one two".to_string());
@@ -286,11 +286,11 @@ mod tests {
     #[test]
     fn display() {
         let soup = Soup::new(r#"<div class="foo bar" id="baz"></div>"#);
-        let div = soup.tag("div").find().unwrap();
+        let div = soup.tag("div").find().expect("Couldn't find tag 'div'");
         assert_eq!(div.display(), r#"<div class="foo bar" id="baz"></div>"#);
 
         let soup = Soup::new(r#"<div class="foo bar" id="baz"><b>SOME TEXT</b></div>"#);
-        let div = soup.tag("div").find().unwrap();
+        let div = soup.tag("div").find().expect("Couldn't find tag 'div'");
         assert_eq!(
             div.display(),
             r#"<div class="foo bar" id="baz"><b>SOME TEXT</b></div>"#
@@ -299,8 +299,8 @@ mod tests {
         let soup = Soup::new(
             r#"<div class="foo bar" id="baz"><b>SOME TEXT <!-- and a comment --></b></div>"#,
         );
-        let div = soup.tag("div").find().unwrap();
-        let b = div.tag("b").find().unwrap();
+        let div = soup.tag("div").find().expect("Couldn't find tag 'div'");
+        let b = div.tag("b").find().expect("Couldn't find tag 'b'");
         assert_eq!(b.display(), r#"<b>SOME TEXT <!-- and a comment --></b>"#);
     }
 }

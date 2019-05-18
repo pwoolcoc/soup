@@ -23,8 +23,8 @@ use regex::Regex;
 /// }
 ///
 /// let soup = Soup::new(r#"<div id="foo"></div>"#);
-/// let result = soup.tag(MyType("div".to_string())).find().unwrap();
-/// assert_eq!(result.get("id").unwrap(), "foo".to_string());
+/// let result = soup.tag(MyType("div".to_string())).find().expect("Couldn't find div with id foo");
+/// assert_eq!(result.get("id").expect("Couldn't get attribute 'id'"), "foo".to_string());
 /// ```
 pub trait Pattern {
     /// Matches the `Pattern` with the value `haystack`

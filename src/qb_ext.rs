@@ -92,7 +92,7 @@ pub trait QueryBuilderExt {
     ///
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let soup = Soup::new(r#"<ul><li>ONE</li><li>TWO</li><li>THREE</li></ul>"#);
-    /// let ul = soup.tag("ul").find().unwrap();
+    /// let ul = soup.tag("ul").find().expect("couldn't find 'ul'");
     /// let li_text = ul.children()
     ///                 .filter(|node| node.is_element())
     ///                 .map(|node| node.text().to_string())
@@ -116,7 +116,7 @@ pub trait QueryBuilderExt {
     ///
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let soup = Soup::new(r#"<div><p><b>FOO</b></p></div>"#);
-    /// let b = soup.tag("b").find().unwrap();
+    /// let b = soup.tag("b").find().expect("Couldn't find tag 'b'");
     /// let parents = b.parents().map(|node| node.name().to_string()).collect::<Vec<_>>();
     /// assert_eq!(parents, vec!["p".to_string(), "div".to_string(), "body".to_string(), "html".to_string(), "[document]".to_string()]);
     /// #   Ok(())
@@ -211,6 +211,6 @@ impl QueryBuilderExt for Handle {
 
 impl QueryBuilderExt for Soup {
     fn get_handle(&self) -> Handle {
-        self.handle.clone()
+        self.handle.document.clone()
     }
 }
