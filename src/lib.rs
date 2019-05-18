@@ -197,8 +197,6 @@
 //!
 //! Passing `true` will match everything:
 //!
-//! (also, passing `false` will always return no results, though if that it useful to you, please let me know)
-//!
 //! ```rust
 //! # extern crate soup;
 //! # use soup::prelude::*;
@@ -220,7 +218,8 @@
 //! #   Ok(())
 //! # }
 //! ```
-//! (also, passing `false` will always return no results, though if that it useful to you, please let me know)
+//!
+//! (also, passing `false` will always return no results, though if that is useful to you, please let me know)
 //!
 //! So what can you do once you get the result of a query? Well, for one thing, you can traverse the tree a few
 //! different ways. You can ascend the tree:
@@ -266,7 +265,7 @@
 //! # }
 //! ```
 //!
-//! Or ascend it:
+//! Or ascend it with an iterator:
 //!
 //! ```rust
 //! # extern crate soup;
