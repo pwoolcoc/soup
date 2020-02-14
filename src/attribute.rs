@@ -24,7 +24,7 @@ fn is_multiple(tag_name: &str, attr_name: &str) -> bool {
 
 fn match_list_attr<V: Pattern>(needle: &V, haystack: &str) -> bool {
     for part in haystack.split(char::is_whitespace) {
-        let part = part.trim().to_lowercase();
+        let part = part.trim();
         if needle.matches(&part) {
             return true;
         }
