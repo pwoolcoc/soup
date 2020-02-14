@@ -284,6 +284,15 @@ mod tests {
     }
 
     #[test]
+    fn case_sensitive() {
+        let soup = Soup::new(r#"<div class="ONE TWO"></div>"#);
+        let one = soup.attr("class", "ONE").find();
+        assert!(one.is_some());
+        let one = soup.attr("class", "one").find();
+        assert!(one.is_none());
+    }
+
+    #[test]
     fn display() {
         let soup = Soup::new(r#"<div class="foo bar" id="baz"></div>"#);
         let div = soup.tag("div").find().expect("Couldn't find tag 'div'");
