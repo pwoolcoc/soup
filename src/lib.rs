@@ -27,7 +27,6 @@
 //!
 //! ```
 //! # extern crate soup;
-//! # use soup::prelude::*;
 //! # const THREE_SISTERS: &'static str = r#"
 //! # <html><head><title>The Dormouse's story</title></head>
 //! # <body>
@@ -42,6 +41,8 @@
 //! # <p class="story">...</p>
 //! # "#;
 //! # fn main() {
+//! use soup::prelude::*;
+//!
 //! let soup = Soup::new(THREE_SISTERS);
 //!
 //! let title = soup.tag("title").find().expect("Couldn't find tag 'title'");
