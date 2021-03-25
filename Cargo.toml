@@ -1,8 +1,8 @@
 [package]
 name = "soup"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Paul Woolcock <paul@woolcock.us>"]
-license = "GPL-3.0"
+license = "CC-PDDC"
 description = """
 Inspired by the python library BeautifulSoup, this is a layer on top of html5ever that adds a different API for querying and manipulating HTML
 """
